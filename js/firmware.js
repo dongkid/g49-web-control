@@ -104,8 +104,8 @@ export function parseUpgradeFile(buf) {
   }
   if (header.cid !== 23)
     errors.push(`CID ${header.cid} is not this device's CID (23)`);
-  if (header.mid !== 5 && header.mid !== 6) {
-    errors.push(`MID ${header.mid} is unknown (5 = 1K, 6 = 4K)`);
+  if (header.mid !== 4 && header.mid !== 5 && header.mid !== 6) {
+    errors.push(`MID ${header.mid} is unknown (4 = G49, 5 = 1K Pro, 6 = 4K)`);
   }
   if (!header.icName) errors.push("icName field is empty");
   if (header.downloadAddr >>> 16 === 0xffff) {

@@ -1,6 +1,7 @@
 import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
+import { SENSORS, SENSOR_IDS, getActiveSensor, getActiveSensorId, setActiveSensorId } from "./sensors.js";
 import { icon } from "./icons.js";
 
 export class SensorUI {
@@ -36,21 +37,20 @@ export class SensorUI {
 
     const state = stateManager.current;
     const p = state.perf || {};
+    const sensor = getActiveSensor();
+    const caps = sensor.capabilities;
 
-    this.container.innerHTML = `
-      <div class="grid-2col">
-        <div class="col-stack">
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title-group">
-                <span class="card-title">
-                  ${icon("cpu", 18)}
-                  PixArt PAW3395 Optical Tracking
-                </span>
-                <span class="card-desc">DSP sensor calibration and synchronization parameters</span>
-              </div>
-            </div>
-            <div class="card-body">
+    const sensorOptions = Object.values(SENSORS)
+      .map(
+        (s) =>
+          `<option value="${s.id}" ${s.id === getActiveSensorId() ? "selected" : ""}>
+            ${s.label} — ${s.modelHint}
+          </option>`,
+      )
+      .join("");
+
+    const motionSyncRow = caps.motionSync
+      ? `
               <div class="setting-row">
                 <div class="setting-info">
                   <span class="setting-label">Motion Sync</span>
@@ -61,6 +61,31 @@ export class SensorUI {
                   <span class="switch-slider"></span>
                 </label>
               </div>
+      `
+      : "";
+
+    this.container.innerHTML = `
+      <div class="grid-2col">
+        <div class="col-stack">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <span class="card-title">
+                  ${icon("cpu", 18)}
+                  ${sensor.label} Optical Tracking
+                </span>
+                <span class="card-desc">Sensor calibration and synchronization parameters</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Sensor Variant</span>
+                  <span class="setting-help">Pick the sensor your model shipped with — it changes DPI encoding and available options</span>
+                </div>
+                <select id="sensorSelect">${sensorOptions}</select>
+              </div>
+              ${motionSyncRow}
 
               <div class="setting-row">
                 <div class="setting-info">
@@ -86,12 +111,14 @@ export class SensorUI {
             </div>
           </div>
 
+          ${caps.surfaceCalibration
+            ? `
           <div class="card">
             <div class="card-header">
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("crosshair", 18)}
-                  PixArt PAW3395 Surface Calibration
+                  ${sensor.label} Surface Calibration
                 </span>
                 <span class="card-desc">Calibrates laser diode current and surface reflection coefficient for your mousepad</span>
               </div>
@@ -103,6 +130,8 @@ export class SensorUI {
               </button>
             </div>
           </div>
+          `
+            : ""}
         </div>
 
         <div class="col-stack">
@@ -186,6 +215,16 @@ export class SensorUI {
   }
 
   attachEvents() {
+    const sensorSelect = this.container.querySelector("#sensorSelect");
+    if (sensorSelect) {
+      sensorSelect.addEventListener("change", () => {
+        setActiveSensorId(sensorSelect.value);
+        // Re-render every panel: DPI range and visible options depend on the
+        // selected sensor's capabilities.
+        stateManager.notify();
+      });
+    }
+
     const motionSync = this.container.querySelector("#motionSyncSwitch");
     if (motionSync) {
       motionSync.addEventListener("change", () => {
@@ -306,7 +345,7 @@ export class SensorUI {
             statusEl.textContent = "Surface Calibration Complete!";
           }
           this.notify(
-            "Sensor surface calibration applied to PAW3395 DSP!",
+            `Sensor surface calibration applied to ${getActiveSensor().label}!`,
             "success",
           );
           setTimeout(() => this.closeCalibrationWizard(), 2000);

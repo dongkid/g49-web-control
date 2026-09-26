@@ -51,7 +51,7 @@ class Transport {
       mode: "USB",
       maxRate: 1000,
       cid: 23,
-      mid: 5,
+      mid: 4,
     };
     return {
       vid: this.device.vendorId,

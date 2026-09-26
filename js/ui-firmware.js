@@ -43,10 +43,24 @@ export class FirmwareUI {
     if (abortBtn) abortBtn.addEventListener("click", () => this.abort());
   }
 
+  // The 1K USB PIDs are shared between the G49 (MID 4) and the M916 Pro 1K
+  // (MID 5), so firmware matching must prefer the board identity read live
+  // from the device over the static PID table.
+  getDeviceIdentity() {
+    const base = transport.getDeviceInfo();
+    if (!base) return null;
+    const state = stateManager.current;
+    return {
+      ...base,
+      cid: state.cid || base.cid,
+      mid: state.mid || base.mid,
+    };
+  }
+
   render() {
     if (!this.container) return;
     const state = stateManager.current;
-    const devInfo = transport.getDeviceInfo();
+    const devInfo = this.getDeviceIdentity();
     const isWired = !!(devInfo && /wired/i.test(devInfo.mode || ""));
     const file = this.parsed;
     const fileVersion =
@@ -327,7 +341,7 @@ export class FirmwareUI {
       this.notify("Load a valid .bin upgrade package first", "error");
       return;
     }
-    const devInfo = transport.getDeviceInfo();
+    const devInfo = this.getDeviceIdentity();
     const match = matchUpgradeFile(file, devInfo);
     if (!match.ok) {
       this.notify(match.errors[0], "error");

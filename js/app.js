@@ -9,7 +9,7 @@ import { DongleUI } from "./ui-dongle.js";
 import { MacroUI } from "./ui-macros.js";
 import { ShortcutsUI } from "./ui-shortcuts.js";
 import { FirmwareUI } from "./ui-firmware.js";
-import { codeToPollingRate } from "./protocol.js";
+import { codeToPollingRate, getActiveSensor } from "./protocol.js";
 import { icon } from "./icons.js";
 
 const TOAST_ICONS = {
@@ -326,7 +326,7 @@ class App {
     this.showOverlay(
       "Connecting to device...",
       interactive
-        ? "Pick your M916 Pro from the browser prompt, then wait for the configuration to load."
+        ? "Pick your Redragon G49 / M916 Pro from the browser prompt, then wait for the configuration to load."
         : "Opening the WebHID connection and waking up the receiver link...",
       { busy: true },
     );
@@ -359,7 +359,10 @@ class App {
     try {
       await this.handleRead(true);
       this.onConnected();
-      this.notify("Redragon M916 Pro connected!", "success");
+      this.notify(
+        `${transport.getDeviceInfo()?.name || "Redragon mouse"} connected!`,
+        "success",
+      );
       this.suppressAutoReload();
       try {
         await MouseApi.reloadSensorConfig(
@@ -440,7 +443,7 @@ class App {
     this.connectHeaderBtn.style.display = "";
     this.showOverlay(
       "Device Disconnected",
-      "Connect your Redragon M916 Pro (1K or 4K) via 2.4GHz USB dongle or USB-C cable and click Connect.",
+      "Connect your Redragon G49 / M916 Pro via 2.4GHz USB dongle or USB-C cable and click Connect.",
     );
     this.syncButtonStates();
   }
@@ -510,6 +513,12 @@ class App {
       stateManager.setCommittedState(settings);
       this.mouseSvg.render();
       this.buttonsUI.renderList();
+      if (settings.sensorAutoSwitched || settings.sensorAutoSet) {
+        this.notify(
+          `Sensor profile auto-set to ${getActiveSensor().label} based on the connected device.`,
+          "info",
+        );
+      }
       if (!silent)
         this.notify("Flash configuration loaded successfully!", "success");
     } catch (err) {

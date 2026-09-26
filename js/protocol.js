@@ -1,26 +1,47 @@
+import {
+  SENSOR_IDS,
+  getActiveSensorId,
+  encodeDpiPaw3311,
+  decodeDpiPaw3311,
+  dpiToPaw3311Code,
+  PAW3311_CODE_DPI,
+} from "./sensors.js";
+
+export {
+  SENSORS,
+  SENSOR_IDS,
+  getActiveSensor,
+  getActiveSensorId,
+  setActiveSensorId,
+  peekStoredSensorId,
+  sensorIdForMid,
+  isKnownPaw3311Code,
+  sensorMaxDpi,
+} from "./sensors.js";
+
 export const USB_VID = 0x3554;
 
 export const DEVICE_MODELS = {
   0xf55d: {
-    name: "Redragon M916 Pro 1K",
+    name: "Redragon G49 / M916 Pro 1K",
     mode: "2.4GHz Wireless",
     maxRate: 1000,
     cid: 23,
-    mid: 5,
+    mid: 4,
   },
   0xf5d5: {
-    name: "Redragon M916 Pro 1K",
+    name: "Redragon G49 / M916 Pro 1K",
     mode: "2.4GHz Alt Receiver",
     maxRate: 1000,
     cid: 23,
-    mid: 5,
+    mid: 4,
   },
   0xf55e: {
-    name: "Redragon M916 Pro 1K",
+    name: "Redragon G49 / M916 Pro 1K",
     mode: "Wired USB-C",
     maxRate: 1000,
     cid: 23,
-    mid: 5,
+    mid: 4,
   },
 
   0xf54c: {
@@ -427,28 +448,43 @@ export const MIN_DPI = 50;
 export const MAX_DPI = 26000;
 export const DPI_STEP = 50;
 
-export function encodeDpiRecord(targetDPI) {
-  const clamped = Math.max(
-    MIN_DPI,
-    Math.min(MAX_DPI, Math.round(targetDPI / DPI_STEP) * DPI_STEP),
-  );
-  const rawCode = Math.floor(clamped / 50) - 1;
-  let dpiEx = 0;
+// Builds a 4-byte flash stage record [xCode, yCode, dpiEx, checksum] for the
+// active sensor. PAW3395 uses linear codes; PAW3311 uses its quantized table
+// with x2/x4 dpiEx flags above 10,000 DPI (see sensors.js).
+export function encodeDpiRecord(targetDPI, sensorId = getActiveSensorId()) {
+  let xDpi, yDpi, dpiEx;
 
-  if (clamped > 12800) {
-    const highBits = rawCode >> 8;
-    dpiEx = (highBits << 2) | (highBits << 6);
+  if (sensorId === SENSOR_IDS.PAW3311) {
+    [xDpi, yDpi, dpiEx] = encodeDpiPaw3311(targetDPI);
+  } else {
+    const clamped = Math.max(
+      MIN_DPI,
+      Math.min(MAX_DPI, Math.round(targetDPI / DPI_STEP) * DPI_STEP),
+    );
+    const rawCode = Math.floor(clamped / 50) - 1;
+    dpiEx = 0;
+
+    if (clamped > 12800) {
+      const highBits = rawCode >> 8;
+      dpiEx = (highBits << 2) | (highBits << 6);
+    }
+
+    xDpi = rawCode & 0xff;
+    yDpi = rawCode & 0xff;
   }
 
-  const xDpi = rawCode & 0xff;
-  const yDpi = rawCode & 0xff;
   const checksum = (0x55 - (xDpi + yDpi + dpiEx)) & 0xff;
-
   return [xDpi, yDpi, dpiEx, checksum];
 }
 
-export function decodeDpiRecord(record) {
+export function decodeDpiRecord(record, sensorId = getActiveSensorId()) {
   if (!record || record.length < 3) return 800;
+
+  if (sensorId === SENSOR_IDS.PAW3311) {
+    const tableDpi = decodeDpiPaw3311(record);
+    if (tableDpi !== null) return tableDpi;
+  }
+
   const xDpi = record[0];
   const dpiEx = record[2];
   const highBits = Math.max((dpiEx >> 6) & 0x03, (dpiEx >> 2) & 0x03);
@@ -456,6 +492,22 @@ export function decodeDpiRecord(record) {
   if (dpiEx & 0x22) dpi *= 2;
   if (dpiEx & 0x11) dpi *= 2;
   return Math.max(MIN_DPI, Math.min(MAX_DPI, dpi));
+}
+
+// Sniper / DPI-lock bindings carry a single-byte sensor code in param1.
+export function dpiCodeToDpi(code, sensorId = getActiveSensorId()) {
+  if (sensorId === SENSOR_IDS.PAW3311) {
+    const base = PAW3311_CODE_DPI.get(code);
+    if (base !== undefined) return base;
+  }
+  return (code + 1) * 50;
+}
+
+export function dpiToDpiCode(dpi, sensorId = getActiveSensorId()) {
+  if (sensorId === SENSOR_IDS.PAW3311) {
+    return dpiToPaw3311Code(dpi);
+  }
+  return Math.floor(dpi / 50) - 1;
 }
 
 export function build2ByteRecord(value) {

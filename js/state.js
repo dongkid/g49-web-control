@@ -5,6 +5,7 @@ import {
   MULTIMEDIA_KEYS,
   DPI_SWITCH_MODES,
   SCROLL_MODES,
+  dpiCodeToDpi,
 } from "./protocol.js";
 import { icon } from "./icons.js";
 
@@ -290,7 +291,7 @@ export function formatBindingSummary(bind) {
     case KEY_CLASSES.KC_ChangeConfigKey:
       return `Profile Switch (1 ${icon("arrowLeftRight", 12)} 2)`;
     case KEY_CLASSES.KC_DPILockKey:
-      return `Sniper Lock (${(p1 + 1) * 50} DPI)`;
+      return `Sniper Lock (${dpiCodeToDpi(p1)} DPI)`;
     default:
       return KEY_CLASS_NAMES[kClass] || "Unknown Action";
   }

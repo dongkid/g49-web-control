@@ -1,8 +1,22 @@
-import { POLLING_RATES, MIN_DPI, MAX_DPI, DPI_STEP } from "./protocol.js";
+import {
+  POLLING_RATES,
+  MIN_DPI,
+  DPI_STEP,
+  encodeDpiRecord,
+  decodeDpiRecord,
+} from "./protocol.js";
+import { sensorMaxDpi, getActiveSensor } from "./sensors.js";
 import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
 import { icon } from "./icons.js";
+
+// Snap a DPI value to the closest value the active sensor can actually
+// represent (3311 uses x2/x4 scaling above 10,000, so those regions only
+// support 100/200 DPI granularity).
+function snapDpi(val) {
+  return decodeDpiRecord(encodeDpiRecord(val));
+}
 
 export class DpiUI {
   constructor(containerId) {
@@ -24,6 +38,8 @@ export class DpiUI {
     const state = stateManager.current;
     const devInfo = transport.getDeviceInfo() || { maxRate: 1000 };
     const is4k = devInfo.maxRate >= 4000;
+    const maxDpi = sensorMaxDpi();
+    const sensorLabel = getActiveSensor().label;
 
     this.container.innerHTML = `
       <div class="grid-2col">
@@ -99,7 +115,7 @@ export class DpiUI {
                 ${icon("crosshair", 18)}
                 DPI Resolution Stages (${state.maxDPI} Active)
               </span>
-              <span class="card-desc">Click any stage to live-activate on sensor (50 to 26,000 DPI)</span>
+              <span class="card-desc">${sensorLabel} — click any stage to live-activate (50 to ${maxDpi.toLocaleString("en-US")} DPI)</span>
             </div>
             <div class="flex-gap-xs">
               <button class="btn sm" id="removeDpiStageBtn" ${state.maxDPI <= 1 ? "disabled" : ""}>${icon("minus", 14)} Remove</button>
@@ -119,9 +135,9 @@ export class DpiUI {
                   <div class="dpi-color-btn" style="background-color: ${hex};" title="Change Stage Color">
                     <input type="color" class="dpi-color-input" data-stage="${i}" value="${hex}">
                   </div>
-                  <input type="range" class="dpi-range-input" data-stage="${i}" min="${MIN_DPI}" max="${MAX_DPI}" step="${DPI_STEP}" value="${dpi}">
+                  <input type="range" class="dpi-range-input" data-stage="${i}" min="${MIN_DPI}" max="${maxDpi}" step="${DPI_STEP}" value="${dpi}">
                   <div class="num-input-wrap">
-                    <input type="number" class="dpi-num-input" data-stage="${i}" min="${MIN_DPI}" max="${MAX_DPI}" step="${DPI_STEP}" value="${dpi}">
+                    <input type="number" class="dpi-num-input" data-stage="${i}" min="${MIN_DPI}" max="${maxDpi}" step="${DPI_STEP}" value="${dpi}">
                     <span class="unit">DPI</span>
                   </div>
                   <button class="btn sm ghost set-active-dpi-btn ${isActive ? "active" : ""}" data-stage="${i}" title="${isActive ? "Active Live Stage" : "Switch Live Stage"}">
@@ -230,7 +246,8 @@ export class DpiUI {
     this.container.querySelectorAll(".dpi-range-input").forEach((range) => {
       range.addEventListener("input", (e) => {
         const stage = parseInt(range.getAttribute("data-stage"), 10);
-        const val = parseInt(range.value, 10);
+        const val = snapDpi(parseInt(range.value, 10));
+        range.value = val;
         const numInput = this.container.querySelector(
           `.dpi-num-input[data-stage="${stage}"]`,
         );
@@ -259,8 +276,9 @@ export class DpiUI {
         let val = parseInt(num.value, 10) || 800;
         val = Math.max(
           MIN_DPI,
-          Math.min(MAX_DPI, Math.round(val / DPI_STEP) * DPI_STEP),
+          Math.min(maxDpi, Math.round(val / DPI_STEP) * DPI_STEP),
         );
+        val = snapDpi(val);
         num.value = val;
         const range = this.container.querySelector(
           `.dpi-range-input[data-stage="${stage}"]`,

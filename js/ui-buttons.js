@@ -3,7 +3,10 @@ import {
   MULTIMEDIA_KEYS,
   PHYSICAL_BUTTON_DEFAULTS,
   MACRO_COUNT,
+  dpiCodeToDpi,
+  dpiToDpiCode,
 } from "./protocol.js";
+import { sensorMaxDpi } from "./sensors.js";
 import { stateManager, formatBindingSummary } from "./state.js";
 
 export class ButtonMappingUI {
@@ -356,7 +359,8 @@ export class ButtonMappingUI {
       }
 
       case KEY_CLASSES.KC_DPILockKey: {
-        const liveDpi = (this.param1 + 1) * 50;
+        const maxDpi = sensorMaxDpi();
+        const liveDpi = dpiCodeToDpi(this.param1);
         html = `
           <div class="setting-row">
             <div class="setting-info">
@@ -364,11 +368,11 @@ export class ButtonMappingUI {
               <span class="setting-help">Sensor switches to this DPI while holding button</span>
             </div>
             <div class="num-input-wrap">
-              <input type="number" id="subSniperDpiNum" min="50" max="26000" step="50" value="${liveDpi}">
+              <input type="number" id="subSniperDpiNum" min="50" max="${maxDpi}" step="50" value="${liveDpi}">
               <span class="unit">DPI</span>
             </div>
           </div>
-          <input type="range" id="subSniperDpiRange" min="50" max="26000" step="50" value="${liveDpi}">
+          <input type="range" id="subSniperDpiRange" min="50" max="${maxDpi}" step="50" value="${liveDpi}">
         `;
         break;
       }
@@ -464,12 +468,12 @@ export class ButtonMappingUI {
       sniperRange.addEventListener("input", () => {
         sniperNum.value = sniperRange.value;
         const dpi = parseInt(sniperRange.value, 10);
-        this.param1 = Math.floor(dpi / 50) - 1;
+        this.param1 = dpiToDpiCode(dpi);
       });
       sniperNum.addEventListener("change", () => {
         sniperRange.value = sniperNum.value;
         const dpi = parseInt(sniperNum.value, 10);
-        this.param1 = Math.floor(dpi / 50) - 1;
+        this.param1 = dpiToDpiCode(dpi);
       });
     }
 

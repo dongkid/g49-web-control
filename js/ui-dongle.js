@@ -142,8 +142,11 @@ export class DongleUI {
     }
 
     const devInfo = transport.getDeviceInfo();
-    const cid = devInfo ? devInfo.cid : 23;
-    const mid = devInfo ? devInfo.mid : 5;
+    const state = stateManager.current;
+    // Prefer the live-read board identity: the same 1K USB PIDs are shared
+    // by the G49 (MID 4) and the M916 Pro 1K (MID 5).
+    const cid = state.cid || (devInfo ? devInfo.cid : 23);
+    const mid = state.mid || (devInfo ? devInfo.mid : 4);
 
     this.pairingModal.classList.add("active");
     const statusEl = this.pairingModal.querySelector("#pairingStatusBadge");

@@ -17,6 +17,12 @@ import {
   pollingRateToCode,
   encodeDpiRecord,
   decodeDpiRecord,
+  getActiveSensorId,
+  setActiveSensorId,
+  peekStoredSensorId,
+  sensorIdForMid,
+  isKnownPaw3311Code,
+  SENSOR_IDS,
   build2ByteRecord,
   build4ByteRecord,
   PHYSICAL_BUTTON_DEFAULTS,
@@ -187,7 +193,7 @@ export class MouseApi {
       }
     } catch (_) {}
     const info = transport.getDeviceInfo();
-    return { cid: info ? info.cid : 23, mid: info ? info.mid : 5 };
+    return { cid: info ? info.cid : 23, mid: info ? info.mid : 4 };
   }
 
   static async readVersion() {
@@ -201,6 +207,17 @@ export class MouseApi {
       if (!resp) return null;
       const len = resp[4] || 8;
       const sub = resp.subarray(5, 5 + len);
+
+      // Binary responses carry the version as a u16/u32 big-endian word
+      // (0x0313 -> "3.13"), matching the official driver's Version encoding.
+      if (len >= 2 && len <= 4 && (sub[0] < 32 || sub[0] > 126)) {
+        let word = 0;
+        for (let i = 0; i < len; i++) word = (word << 8) | sub[i];
+        return `${(word >> 8).toString(16)}.${(word & 0xff)
+          .toString(16)
+          .padStart(2, "0")}`;
+      }
+
       let str = "";
       for (let i = 0; i < sub.length; i++) {
         if (sub[i] >= 32 && sub[i] <= 126) {
@@ -272,7 +289,7 @@ export class MouseApi {
     await transport.sleep(50);
   }
 
-  static async startDonglePairing(cid = 23, mid = 5) {
+  static async startDonglePairing(cid = 23, mid = 4) {
     await transport.sendPacket(UsbCommandID.DongleEnterPair, 0, [
       cid & 0xff,
       mid & 0xff,
@@ -655,6 +672,10 @@ export class MouseApi {
       throw new Error("Device is not connected");
     }
 
+    // Read board identity first: the MID decides which sensor codec the
+    // flash contents are decoded with below.
+    const cidMid = await this.readCidMid();
+
     const rateChunk = await this.readFlashChunk(FlashAddr.ReportRate, 2);
     const maxDpiChunk = await this.readFlashChunk(FlashAddr.MaxDPI, 2);
     const currentDpiChunk = await this.readFlashChunk(FlashAddr.CurrentDPI, 2);
@@ -669,16 +690,51 @@ export class MouseApi {
       : 0;
     const silenceHeight = silenceChunk ? silenceChunk[0] : 0;
 
-    const dpiStages = [];
-    for (let i = 0; i < 8; i++) {
-      const addr = FlashAddr.DPIStages + i * 4;
-      const chunk = await this.readFlashChunk(addr, 4);
-      if (chunk && chunk.length >= 3) {
-        dpiStages.push(decodeDpiRecord(chunk));
-      } else {
-        dpiStages.push(800 + i * 400);
+    // Sensor resolution order:
+    // 1. A stored explicit selector choice wins by default.
+    // 2. On first use (no stored choice), the live-read MID maps to a model
+    //    profile (4 = G49/3311, 5/6 = M916 Pro/3395). Auto-set, never stored.
+    // 3. Flash evidence: DPI stage codes outside the 3311 register table can
+    //    only be 3395-style linear encodings, so they override even a stored
+    //    choice for this read. Table codes never trigger the reverse switch.
+    let sensorId = getActiveSensorId();
+    let sensorAutoSet = null;
+    if (!peekStoredSensorId() && cidMid.mid) {
+      const byMid = sensorIdForMid(cidMid.mid);
+      if (byMid && byMid !== sensorId) {
+        setActiveSensorId(byMid, false);
+        sensorId = byMid;
+        sensorAutoSet = byMid;
       }
     }
+
+    const stageChunks = [];
+    for (let i = 0; i < 8; i++) {
+      const addr = FlashAddr.DPIStages + i * 4;
+      stageChunks.push(await this.readFlashChunk(addr, 4));
+    }
+
+    let sensorAutoSwitched = null;
+    if (sensorId === SENSOR_IDS.PAW3311) {
+      const hasForeignCode = stageChunks.some(
+        (chunk) =>
+          chunk &&
+          chunk.length >= 1 &&
+          chunk[0] !== 0xff &&
+          !isKnownPaw3311Code(chunk[0]),
+      );
+      if (hasForeignCode) {
+        setActiveSensorId(SENSOR_IDS.PAW3395, false);
+        sensorId = SENSOR_IDS.PAW3395;
+        sensorAutoSwitched = SENSOR_IDS.PAW3395;
+      }
+    }
+
+    const dpiStages = stageChunks.map((chunk, i) =>
+      chunk && chunk.length >= 3
+        ? decodeDpiRecord(chunk, sensorId)
+        : 800 + i * 400,
+    );
 
     const defaultColors = [
       { r: 255, g: 0, b: 0 },
@@ -717,13 +773,21 @@ export class MouseApi {
     }
 
     const keyDebounce = perfRaw.keyDebounce || 4;
+
+    // On the PAW3311 (G49) firmware the perf booleans are not maintained as
+    // 0/1: motionSync reads a constant 0x80 and ripple/power read the
+    // unprogrammed 0xFF. Interpret "on" strictly as 1 so factory values show
+    // as off and the commit path leaves untouched registers alone.
+    const strictBooleans = getActiveSensorId() === SENSOR_IDS.PAW3311;
+    const perfBool = (raw) => (strictBooleans ? raw === 1 : !!raw);
+
     const motionSync = perfRaw.motionSync || 0;
     const linearCorrection = perfRaw.linearCorrection || 0;
     const rippleControl = perfRaw.rippleControl || 0;
     const powerSaving = perfRaw.powerSaving || 0;
     const rawSleep = perfRaw.sensorSleepTime;
     const rawEnable = perfRaw.customSleepEnable;
-    const isSleepOff = rawSleep === 255 || rawEnable === 0;
+    const isSleepOff = rawSleep === 255 || (strictBooleans ? rawEnable !== 1 : rawEnable === 0);
     const customSleepEnable = !isSleepOff;
     const sensorSleepTime = isSleepOff
       ? 2
@@ -766,7 +830,6 @@ export class MouseApi {
 
     const battery = await this.readBattery();
     const version = await this.readVersion();
-    const cidMid = await this.readCidMid();
     const longRangeMode = await this.readLongRangeMode();
     const dongleRgb = await this.get4kDongleRgb();
     const macros = await this.readMacrosFromFlash();
@@ -782,18 +845,20 @@ export class MouseApi {
       dpiColors,
       perf: {
         keyDebounce,
-        motionSync: !!motionSync,
-        linearCorrection: !!linearCorrection,
-        rippleControl: !!rippleControl,
-        powerSaving: !!powerSaving,
+        motionSync: perfBool(motionSync),
+        linearCorrection: perfBool(linearCorrection),
+        rippleControl: perfBool(rippleControl),
+        powerSaving: perfBool(powerSaving),
         sensorSleepTime,
-        customSleepEnable: !!customSleepEnable,
+        customSleepEnable,
       },
       keyBindings,
       battery,
       version,
       cid: cidMid.cid,
       mid: cidMid.mid,
+      sensorAutoSet,
+      sensorAutoSwitched,
       longRangeMode,
       dongleRgb,
       macros,
@@ -896,6 +961,11 @@ export class MouseApi {
     const sp = state.perf || {};
     const pp = (prev && prev.perf) || null;
     for (const [key, addr] of Object.entries(PERF_2BYTE)) {
+      // Motion sync is a 3395-only feature; on the 3311 firmware the register
+      // holds a firmware constant and must never be rewritten as 0/1.
+      if (key === "motionSync" && getActiveSensorId() === SENSOR_IDS.PAW3311) {
+        continue;
+      }
       await writeIfChanged(
         rec2(perfVal(sp, key)),
         pp ? rec2(perfVal(pp, key)) : null,
@@ -921,7 +991,12 @@ export class MouseApi {
       }
     }
 
-    if (state.dongleRgb && state.dongleRgb.mode) {
+    // Dongle LED commands only exist on the 4K receiver firmware; skip them
+    // entirely on 1K/wired links instead of sending stray commands.
+    const devInfo = transport.getDeviceInfo();
+    const is4kDongleLink =
+      devInfo && devInfo.maxRate >= 4000 && !/wired/i.test(devInfo.mode || "");
+    if (is4kDongleLink && state.dongleRgb && state.dongleRgb.mode) {
       const pRgb = prev && prev.dongleRgb;
       const rgbSame =
         pRgb &&
