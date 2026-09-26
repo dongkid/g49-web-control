@@ -41,6 +41,14 @@ This is a fork of [vzpyr/m916proui](https://github.com/vzpyr/m916proui) adapted 
 - Pairing and firmware matching prefer the live-read board identity (MID 4 for the G49)
 - Known quirk: on the 1K RF dongle the version / CID-MID queries only ACK-echo, so the firmware badge may stay blank over wireless (matches upstream findings)
 
+## Web
+
+Use it directly in any Chromium-based browser (Chrome, Edge, Brave) — no install needed:
+
+**[m916-g49-ui.pages.dev](https://m916-g49-ui.pages.dev)**
+
+Allow the WebHID device prompt when connecting and pick your receiver. Device permissions are per-origin, so the receiver must be re-authorized once on this domain even if you have already used the app on localhost.
+
 ## Getting started
 
 Serve over localhost (WebHID requires a secure context) and open in Chrome / Edge / Brave:
@@ -62,7 +70,7 @@ sudo udevadm control --reload-rules
 ## Maintenance
 
 - `node reference/check-locales.mjs` — dictionary integrity check
-- `node reference/verify-g49-codec.mjs` — DPI codec regression against a real G49 flash dump (`reference/g49-flash-dump.bin`)
+- `node reference/verify-g49-codec.mjs` — DPI codec regression against a real G49 flash dump (place yours at `reference/g49-flash-dump.bin`; local captures are not committed)
 - [SPEC.md](SPEC.md) — wire protocol and on-board flash layout, reverse-engineered from the official Windows driver
 
 ## License

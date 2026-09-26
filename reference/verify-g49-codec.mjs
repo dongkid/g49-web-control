@@ -9,7 +9,17 @@ import {
 } from "../js/sensors.js";
 import { encodeDpiRecord, decodeDpiRecord } from "../js/protocol.js";
 
-const flash = fs.readFileSync(new URL("./g49-flash-dump.bin", import.meta.url));
+const dumpUrl = new URL("./g49-flash-dump.bin", import.meta.url);
+if (!fs.existsSync(dumpUrl)) {
+  // The dump is a local capture of your own mouse and is intentionally not
+  // committed. Place one at reference/g49-flash-dump.bin to run this check.
+  console.error(
+    "SKIPPED: reference/g49-flash-dump.bin not found.\n" +
+      "Capture a flash dump from the official driver log and place it there to run this regression.",
+  );
+  process.exit(0);
+}
+const flash = fs.readFileSync(dumpUrl);
 let failures = 0;
 const check = (name, actual, expected) => {
   const ok = JSON.stringify(actual) === JSON.stringify(expected);

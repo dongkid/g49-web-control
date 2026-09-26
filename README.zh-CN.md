@@ -41,6 +41,14 @@ G49 与 M916 Pro 1K 共用相同的 1K USB ID，但传感器和板载身份不�
 - 配对与固件匹配优先使用实读板载身份（G49 为 MID 4）
 - 已知怪癖：1K 接收器对版本 / CID-MID 查询只回显 ACK，无线连接下固件版本徽章可能为空（与上游结论一致）
 
+## 在线使用
+
+在任意 Chromium 系浏览器（Chrome / Edge / Brave）中直接使用，无需安装：
+
+**[m916-g49-ui.pages.dev](https://m916-g49-ui.pages.dev)**
+
+连接时允许 WebHID 设备弹窗并选择接收器。浏览器权限按域名隔离：即使之前在 localhost 上授权过，在该域名下也需要重新授权一次。
+
 ## 快速开始
 
 通过 localhost 启动服务（WebHID 要求安全上下文），并用 Chrome / Edge / Brave 打开：
@@ -62,7 +70,7 @@ sudo udevadm control --reload-rules
 ## 维护工具
 
 - `node reference/check-locales.mjs` — 词典一致性检查
-- `node reference/verify-g49-codec.mjs` — 基于真实 G49 flash 转储（`reference/g49-flash-dump.bin`）的 DPI 编解码回归测试
+- `node reference/verify-g49-codec.mjs` — 基于真实 G49 flash 转储的 DPI 编解码回归测试（将你自己的转储放到 `reference/g49-flash-dump.bin`；本地抓取的转储不入库）
 - [SPEC.md](SPEC.md) — 线协议与板载 flash 布局，逆向自官方 Windows 驱动
 
 ## 许可证
