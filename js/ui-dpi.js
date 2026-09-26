@@ -6,6 +6,7 @@ import {
   decodeDpiRecord,
 } from "./protocol.js";
 import { sensorMaxDpi, getActiveSensor } from "./sensors.js";
+import { t } from "./i18n.js";
 import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
@@ -49,11 +50,11 @@ export class DpiUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("gauge", 18)}
-                  Polling Rate
+                  ${t("dpi.pollingTitle")}
                 </span>
-                <span class="card-desc">USB report frequency sent to the operating system</span>
+                <span class="card-desc">${t("dpi.pollingDesc")}</span>
               </div>
-              <span class="device-badge">${is4k ? "4K High-Speed" : "1K Standard"}</span>
+              <span class="device-badge">${is4k ? t("dpi.badge4k") : t("dpi.badge1k")}</span>
             </div>
             <div class="card-body">
               <div class="segment-group segment-wrap" id="pollingRateGroup">
@@ -63,7 +64,7 @@ export class DpiUI {
                   const isActive = state.reportRate === r.rate;
                   return `
                     <button class="segment-btn ${isActive ? "active" : ""}" data-rate="${r.rate}">
-                      ${r.label}
+                      ${r.rate} Hz${r.is4kOnly ? ` ${t("dpi.fourKOnly")}` : ""}
                     </button>
                   `;
                 }).join("")}
@@ -76,16 +77,16 @@ export class DpiUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("slidersHorizontal", 18)}
-                  Response & Lift-off (LOD)
+                  ${t("dpi.responseTitle")}
                 </span>
-                <span class="card-desc">Mechanical switch debounce and optical sensor height</span>
+                <span class="card-desc">${t("dpi.responseDesc")}</span>
               </div>
             </div>
             <div class="card-body">
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Key Debounce Time</span>
-                  <span class="setting-help">Prevents accidental double-clicks (0 to 20 ms)</span>
+                  <span class="setting-label">${t("dpi.debounce")}</span>
+                  <span class="setting-help">${t("dpi.debounceHelp")}</span>
                 </div>
                 <div class="num-input-wrap">
                   <input type="number" id="debounceNum" min="0" max="20" value="${state.perf.keyDebounce || 4}">
@@ -96,12 +97,12 @@ export class DpiUI {
 
               <div class="setting-row mt-md">
                 <div class="setting-info">
-                  <span class="setting-label">Lift-Off Distance (LOD)</span>
-                  <span class="setting-help">Cutoff tracking height when lifting the mouse</span>
+                  <span class="setting-label">${t("dpi.lod")}</span>
+                  <span class="setting-help">${t("dpi.lodHelp")}</span>
                 </div>
                 <div class="segment-group">
-                  <button class="segment-btn ${state.silenceHeight === 0 ? "active" : ""}" id="lodLowBtn">1.0 mm (Low)</button>
-                  <button class="segment-btn ${state.silenceHeight === 1 ? "active" : ""}" id="lodHighBtn">2.0 mm (High)</button>
+                  <button class="segment-btn ${state.silenceHeight === 0 ? "active" : ""}" id="lodLowBtn">${t("dpi.lodLow")}</button>
+                  <button class="segment-btn ${state.silenceHeight === 1 ? "active" : ""}" id="lodHighBtn">${t("dpi.lodHigh")}</button>
                 </div>
               </div>
             </div>
@@ -113,13 +114,13 @@ export class DpiUI {
             <div class="card-title-group">
               <span class="card-title">
                 ${icon("crosshair", 18)}
-                DPI Resolution Stages (${state.maxDPI} Active)
+                ${t("dpi.stagesTitle", { n: state.maxDPI })}
               </span>
-              <span class="card-desc">${sensorLabel} — click any stage to live-activate (50 to ${maxDpi.toLocaleString("en-US")} DPI)</span>
+              <span class="card-desc">${t("dpi.stagesDesc", { sensor: sensorLabel, max: maxDpi.toLocaleString("en-US") })}</span>
             </div>
             <div class="flex-gap-xs">
-              <button class="btn sm" id="removeDpiStageBtn" ${state.maxDPI <= 1 ? "disabled" : ""}>${icon("minus", 14)} Remove</button>
-              <button class="btn sm" id="addDpiStageBtn" ${state.maxDPI >= 8 ? "disabled" : ""}>${icon("plus", 14)} Add</button>
+              <button class="btn sm" id="removeDpiStageBtn" ${state.maxDPI <= 1 ? "disabled" : ""}>${icon("minus", 14)} ${t("dpi.remove")}</button>
+              <button class="btn sm" id="addDpiStageBtn" ${state.maxDPI >= 8 ? "disabled" : ""}>${icon("plus", 14)} ${t("dpi.add")}</button>
             </div>
           </div>
           <div class="card-body" id="dpiStagesList">
@@ -140,7 +141,7 @@ export class DpiUI {
                     <input type="number" class="dpi-num-input" data-stage="${i}" min="${MIN_DPI}" max="${maxDpi}" step="${DPI_STEP}" value="${dpi}">
                     <span class="unit">DPI</span>
                   </div>
-                  <button class="btn sm ghost set-active-dpi-btn ${isActive ? "active" : ""}" data-stage="${i}" title="${isActive ? "Active Live Stage" : "Switch Live Stage"}">
+                  <button class="btn sm ghost set-active-dpi-btn ${isActive ? "active" : ""}" data-stage="${i}" title="${isActive ? t("dpi.activeTooltip") : t("dpi.switchTooltip")}">
                     ${isActive ? icon("circle", 14, "currentColor", "", "currentColor") : icon("circle", 14)}
                   </button>
                 </div>

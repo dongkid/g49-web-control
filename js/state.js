@@ -7,6 +7,7 @@ import {
   SCROLL_MODES,
   dpiCodeToDpi,
 } from "./protocol.js";
+import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
 export function createDefaultState() {
@@ -255,45 +256,58 @@ class StateManager {
 }
 
 export function formatBindingSummary(bind) {
-  if (!bind) return "Unbound";
+  if (!bind) return t("bind.unbound");
   const kClass = Number(bind.class);
   const p1 = Number(bind.param1);
   const p2 = Number(bind.param2);
 
   switch (kClass) {
     case KEY_CLASSES.KC_CloseKey:
-      return "Disabled";
+      return t("bind.class.0x00");
     case KEY_CLASSES.KC_MouseKey:
-      return MOUSE_BUTTON_MASKS[p1] || `Mouse Click (0x${p1.toString(16)})`;
+      return t(`bind.mouse.${p1}`, null, MOUSE_BUTTON_MASKS[p1]) ||
+        t("bind.mouse.hex", { code: p1.toString(16) });
     case KEY_CLASSES.KC_ChangeDPIKey:
-      return DPI_SWITCH_MODES[p1] || "DPI Switch";
+      return t(`bind.dpi.${p1}`, null, DPI_SWITCH_MODES[p1]) || "DPI Switch";
     case KEY_CLASSES.KC_MouseACPANKey:
-      return p1 === 1 ? "Scroll Left" : "Scroll Right";
+      return p1 === 1 ? t("bind.scroll.1") : t("bind.scroll.2");
     case KEY_CLASSES.KC_ScrollUpDownKey:
-      return SCROLL_MODES[p1] || "Scroll Wheel";
+      return t(`bind.scroll.${p1}`, null, SCROLL_MODES[p1]) ||
+        t("bind.class.0x0b");
     case KEY_CLASSES.KC_MouseFireKey:
-      return `Rapid Fire (${p1} ms, ${p2 === 0 ? "Held" : p2 + "x"})`;
+      return t("bind.fire", {
+        ms: p1,
+        times:
+          p2 === 0 ? t("bind.fire.held") : t("bind.fire.count", { n: p2 }),
+      });
     case KEY_CLASSES.KC_ShortcutKey: {
       const media = MULTIMEDIA_KEYS.find((m) => m.code === p1);
-      if (media) return `Multimedia: ${media.name}`;
-      return `Shortcut #${p1 + 1}`;
+      if (media) return t("bind.media", { name: t(`media.${media.k}`) });
+      return t("bind.shortcut", { n: p1 + 1 });
     }
     case KEY_CLASSES.KC_MacroKey:
-      return `Macro #${p1 + 1} (${macroLoopLabel(p2)})`;
+      return t("bind.macro", { n: p1 + 1, loop: macroLoopLabel(p2) });
     case KEY_CLASSES.KC_ChangeReportRateKey:
-      return "Polling Rate Cycle";
+      return t("bind.class.0x07");
     case KEY_CLASSES.KC_DecorativeLampKey:
       return p1 === 0
-        ? "Lights On/Off"
+        ? t("bind.lightsAll")
         : p1 === 3
-          ? "Strip On/Off"
-          : "Cycle RGB";
+          ? t("bind.lightsStrip")
+          : t("bind.lightsCycle");
     case KEY_CLASSES.KC_ChangeConfigKey:
-      return `Profile Switch (1 ${icon("arrowLeftRight", 12)} 2)`;
+      return `${t("bind.profileSwitch")} (1 ${icon("arrowLeftRight", 12)} 2)`;
     case KEY_CLASSES.KC_DPILockKey:
-      return `Sniper Lock (${dpiCodeToDpi(p1)} DPI)`;
+      return t("bind.sniper", { dpi: dpiCodeToDpi(p1) });
     default:
-      return KEY_CLASS_NAMES[kClass] || "Unknown Action";
+      return (
+        KEY_CLASS_NAMES[kClass] &&
+        t(
+          `bind.class.0x${kClass.toString(16).padStart(2, "0")}`,
+          null,
+          KEY_CLASS_NAMES[kClass],
+        )
+      ) || t("bind.unknown");
   }
 }
 
@@ -302,10 +316,10 @@ function toBool(value) {
 }
 
 function macroLoopLabel(p2) {
-  if (p2 === 0) return "Once";
-  if (p2 === 254) return "While Held";
-  if (p2 === 255) return "Until Key Pressed";
-  return `${p2}x`;
+  if (p2 === 0) return t("bind.opt.playOnce");
+  if (p2 === 254) return t("bind.opt.loopHeld");
+  if (p2 === 255) return t("bind.opt.loopUntil");
+  return t("bind.opt.repeatN", { n: p2 });
 }
 
 export const stateManager = new StateManager();

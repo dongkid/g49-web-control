@@ -10,6 +10,14 @@ import { MacroUI } from "./ui-macros.js";
 import { ShortcutsUI } from "./ui-shortcuts.js";
 import { FirmwareUI } from "./ui-firmware.js";
 import { codeToPollingRate, getActiveSensor } from "./protocol.js";
+import {
+  t,
+  getLocale,
+  setLocale,
+  initI18n,
+  onLocaleChange,
+  applyDomTranslations,
+} from "./i18n.js";
 import { icon } from "./icons.js";
 
 const TOAST_ICONS = {
@@ -23,6 +31,8 @@ class App {
   constructor() {
     this.isWorking = false;
     this.isReading = false;
+    this.lastOverlay = null;
+    initI18n();
     this.initDOMElements();
     this.initTheme();
     this.initComponents();
@@ -198,6 +208,26 @@ class App {
       this.themeToggleBtn.addEventListener("click", () => this.toggleTheme());
     }
 
+    const langSelect = document.getElementById("langSelect");
+    if (langSelect) {
+      langSelect.value = getLocale();
+      langSelect.addEventListener("change", () => setLocale(langSelect.value));
+    }
+
+    onLocaleChange(() => {
+      applyDomTranslations();
+      // 静态 HTML 之外，遮罩与状态文字由 JS 管理，需要重放当前状态
+      if (this.lastOverlay) {
+        this.showOverlay(
+          this.lastOverlay.title,
+          this.lastOverlay.msg,
+          this.lastOverlay.opts,
+        );
+      }
+      stateManager.notify();
+      this.syncStateToUI(stateManager.current, stateManager.hasChanges);
+    });
+
     this.navTabs.forEach((tab) => {
       tab.addEventListener("click", () => {
         const target = tab.getAttribute("data-tab");
@@ -267,7 +297,7 @@ class App {
         this.suppressAutoReload();
         await MouseApi.reloadSensorConfig(profileIndex);
         this.notify(
-          `Profile ${profileIndex + 1} activated on sensor DSP`,
+          t("toast.profileApplied", { n: profileIndex + 1 }),
           "info",
         );
       } catch (_) {}
@@ -276,14 +306,9 @@ class App {
 
   async initConnection() {
     if (!transport.isSupported()) {
-      this.notify(
-        "Please open this app in Google Chrome, Microsoft Edge, or a Chromium-based browser with WebHID support.",
-        "error",
-        10000,
-      );
+      this.notify(t("toast.notSupported"), "error", 10000);
       if (this.disconnectMsg) {
-        this.disconnectMsg.textContent =
-          "WebHID is not supported in this browser. Please use Chrome, Edge, or Brave.";
+        this.disconnectMsg.textContent = t("toast.notSupportedOverlay");
       }
       if (this.retryBtn) this.retryBtn.disabled = true;
       return;
@@ -291,8 +316,8 @@ class App {
 
     this.isWorking = true;
     this.showOverlay(
-      "Connecting to device...",
-      "Opening the WebHID connection and waking up the receiver link...",
+      t("overlay.connectingTitle"),
+      t("overlay.connectingMsg"),
       { busy: true },
     );
 
@@ -322,12 +347,10 @@ class App {
     if (this.isWorking) return;
     this.isWorking = true;
     this.statusDot.className = "status-dot warning";
-    this.statusText.textContent = "Connecting...";
+    this.statusText.textContent = t("header.connecting");
     this.showOverlay(
-      "Connecting to device...",
-      interactive
-        ? "Pick your Redragon G49 / M916 Pro from the browser prompt, then wait for the configuration to load."
-        : "Opening the WebHID connection and waking up the receiver link...",
+      t("overlay.connectingTitle"),
+      interactive ? t("overlay.pickMsg") : t("overlay.connectingMsg"),
       { busy: true },
     );
 
@@ -339,7 +362,7 @@ class App {
         this.onDisconnected();
       }
     } catch (err) {
-      this.notify(`Connection failed: ${err.message}`, "error");
+      this.notify(t("toast.connectFail", { err: err.message }), "error");
       this.onDisconnected();
     } finally {
       this.isWorking = false;
@@ -349,10 +372,10 @@ class App {
 
   async handleConnectSuccess() {
     this.statusDot.className = "status-dot warning";
-    this.statusText.textContent = "Reading device...";
+    this.statusText.textContent = t("header.readingDevice");
     this.showOverlay(
-      "Reading device configuration...",
-      "Reading settings and macros from the mouse flash memory. This normally takes a few seconds.",
+      t("overlay.readingTitle"),
+      t("overlay.readingMsg"),
       { busy: true },
     );
 
@@ -360,7 +383,10 @@ class App {
       await this.handleRead(true);
       this.onConnected();
       this.notify(
-        `${transport.getDeviceInfo()?.name || "Redragon mouse"} connected!`,
+        t("toast.connected", {
+          name:
+            transport.getDeviceInfo()?.name || "Redragon mouse",
+        }),
         "success",
       );
       this.suppressAutoReload();
@@ -408,13 +434,14 @@ class App {
   onConnected() {
     this.hideOverlay();
     this.statusDot.className = "status-dot";
-    this.statusText.textContent = "Connected";
+    this.statusText.textContent = t("header.connected");
     this.connectHeaderBtn.style.display = "none";
     this.syncButtonStates();
     this.syncStateToUI(stateManager.current, stateManager.hasChanges);
   }
 
   showOverlay(title, message, { busy = false } = {}) {
+    this.lastOverlay = { title, message, opts: { busy } };
     if (this.disconnectTitle) this.disconnectTitle.textContent = title;
     if (this.disconnectMsg) this.disconnectMsg.textContent = message;
     if (this.disconnectOverlay) {
@@ -425,6 +452,7 @@ class App {
   }
 
   hideOverlay() {
+    this.lastOverlay = null;
     if (this.disconnectOverlay) {
       this.disconnectOverlay.classList.remove("visible");
     }
@@ -435,16 +463,13 @@ class App {
   onDisconnected() {
     this.stopBatteryPoll();
     this.statusDot.className = "status-dot error";
-    this.statusText.textContent = "Disconnected";
+    this.statusText.textContent = t("header.disconnect");
     this.deviceBadge.textContent = "-";
     this.deviceBadge.style.display = "none";
     this.versionBadge.style.display = "none";
     this.batteryBadge.style.display = "none";
     this.connectHeaderBtn.style.display = "";
-    this.showOverlay(
-      "Device Disconnected",
-      "Connect your Redragon G49 / M916 Pro via 2.4GHz USB dongle or USB-C cable and click Connect.",
-    );
+    this.showOverlay(t("overlay.title"), t("overlay.msg"));
     this.syncButtonStates();
   }
 
@@ -506,7 +531,7 @@ class App {
     this.syncButtonStates();
 
     if (!silent)
-      this.notify("Reading configuration from mouse flash memory...", "info");
+      this.notify(t("toast.reading"), "info");
 
     try {
       const settings = await MouseApi.readAllSettings();
@@ -515,14 +540,14 @@ class App {
       this.buttonsUI.renderList();
       if (settings.sensorAutoSwitched || settings.sensorAutoSet) {
         this.notify(
-          `Sensor profile auto-set to ${getActiveSensor().label} based on the connected device.`,
+          t("toast.sensorAutoSet", { sensor: getActiveSensor().label }),
           "info",
         );
       }
       if (!silent)
-        this.notify("Flash configuration loaded successfully!", "success");
+        this.notify(t("toast.readOk"), "success");
     } catch (err) {
-      this.notify(`Failed to read from mouse: ${err.message}`, "error");
+      this.notify(t("toast.readFail", { err: err.message }), "error");
       throw err;
     } finally {
       this.isWorking = false;
@@ -536,7 +561,7 @@ class App {
     this.isWorking = true;
     this.syncButtonStates();
 
-    this.notify("Writing settings to mouse flash memory...", "info");
+    this.notify(t("toast.writing"), "info");
 
     try {
       const ini = stateManager.initialCommitted;
@@ -551,9 +576,9 @@ class App {
       stateManager.setCommittedState(stateManager.current);
       this.mouseSvg.render();
       this.buttonsUI.renderList();
-      this.notify("Settings saved to mouse hardware!", "success");
+      this.notify(t("toast.writeOk"), "success");
     } catch (err) {
-      this.notify(`Failed to save settings: ${err.message}`, "error");
+      this.notify(t("toast.writeFail", { err: err.message }), "error");
     } finally {
       this.isWorking = false;
       this.syncButtonStates();
@@ -564,7 +589,7 @@ class App {
     if (this.isWorking || !transport.isConnected()) return;
     if (
       !confirm(
-        "Are you sure you want to restore default factory settings? All on-board calibrations and profile mappings will be reset.",
+        t("toast.factoryResetConfirm"),
       )
     ) {
       return;
@@ -575,11 +600,11 @@ class App {
 
     try {
       await MouseApi.factoryReset();
-      this.notify("Factory reset applied! Reloading settings...", "success");
+      this.notify(t("toast.factoryResetOk"), "success");
       await transport.sleep(500);
       await this.handleRead(true);
     } catch (err) {
-      this.notify(`Factory reset failed: ${err.message}`, "error");
+      this.notify(t("toast.factoryResetFail", { err: err.message }), "error");
     } finally {
       this.isWorking = false;
       this.syncButtonStates();
@@ -596,9 +621,9 @@ class App {
       a.download = `M916_Pro_UI_Profile_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      this.notify("Profile exported to JSON", "success");
+      this.notify(t("toast.exportOk"), "success");
     } catch (err) {
-      this.notify(`Export failed: ${err.message}`, "error");
+      this.notify(t("toast.exportFail", { err: err.message }), "error");
     }
   }
 
@@ -613,11 +638,11 @@ class App {
         this.mouseSvg.render();
         this.buttonsUI.renderList();
         this.notify(
-          "Profile imported! Click Commit to save it to the mouse.",
+          t("toast.importOk"),
           "success",
         );
       } catch (err) {
-        this.notify(`Import failed: ${err.message}`, "error");
+        this.notify(t("toast.importFail", { err: err.message }), "error");
       }
       e.target.value = "";
     };

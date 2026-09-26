@@ -29,6 +29,7 @@ import {
   HID_KEY_NAMES,
   MODIFIER_NAMES,
 } from "./protocol.js";
+import { t } from "./i18n.js";
 import { transport } from "./transport.js";
 
 const MACRO_CTX_TYPE_KEY = 0x01;
@@ -81,7 +82,10 @@ function decodeLegacyMacroSteps(slot, stepCount) {
       steps.push({
         type: "mouse",
         keyState,
-        value: `${mouseLabel(code)} ${keyState ? "Down" : "Up"}`,
+        value: t(
+          keyState ? "macro.step.mouseDown" : "macro.step.mouseUp",
+          { btn: mouseLabel(code) },
+        ),
         hidCode: code,
         delay: Math.max(1, delay || 20),
       });
@@ -89,7 +93,7 @@ function decodeLegacyMacroSteps(slot, stepCount) {
       steps.push({
         type: "delay",
         keyState: 0,
-        value: `Delay ${delay} ms`,
+        value: t("macro.step.delay", { ms: delay }),
         hidCode: 0,
         delay,
       });
@@ -97,7 +101,10 @@ function decodeLegacyMacroSteps(slot, stepCount) {
       steps.push({
         type: "key",
         keyState,
-        value: `Key ${keyLabel(code, MACRO_CTX_TYPE_KEY)} ${keyState ? "Down" : "Up"}`,
+        value: t(
+          keyState ? "macro.step.keyDown" : "macro.step.keyUp",
+          { key: keyLabel(code, MACRO_CTX_TYPE_KEY) },
+        ),
         hidCode: code,
         delay: Math.max(1, delay || 20),
       });
@@ -449,7 +456,7 @@ export class MouseApi {
         steps.push({
           type: "delay",
           keyState: 0,
-          value: `Delay ${delay} ms`,
+          value: t("macro.step.delay", { ms: delay }),
           hidCode: 0,
           delay,
         });
@@ -457,7 +464,10 @@ export class MouseApi {
         steps.push({
           type: "mouse",
           keyState,
-          value: `${mouseLabel(code)} ${isDown ? "Down" : "Up"}`,
+          value: t(
+            isDown ? "macro.step.mouseDown" : "macro.step.mouseUp",
+            { btn: mouseLabel(code) },
+          ),
           hidCode: code,
           delay: Math.max(1, delay || 20),
         });
@@ -467,7 +477,10 @@ export class MouseApi {
         steps.push({
           type: "key",
           keyState,
-          value: `Key ${keyLabel(code, typeNibble)} ${isDown ? "Down" : "Up"}`,
+          value: t(
+            isDown ? "macro.step.keyDown" : "macro.step.keyUp",
+            { key: keyLabel(code, typeNibble) },
+          ),
           hidCode: code,
           delay: Math.max(1, delay || 20),
         });

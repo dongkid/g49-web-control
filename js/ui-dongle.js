@@ -1,6 +1,7 @@
 import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
+import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
 export class DongleUI {
@@ -41,19 +42,19 @@ export class DongleUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("sparkles", 18)}
-                  4K Receiver RGB Status Indicator
+                  ${t("dongle.rgbTitle")}
                 </span>
-                <span class="card-desc">Configure the LED indicator behavior on the 4K High-Speed receiver dongle</span>
+                <span class="card-desc">${t("dongle.rgbDesc")}</span>
               </div>
-              <span class="device-badge">4K Dongle Active</span>
+              <span class="device-badge">${t("dongle.badge")}</span>
             </div>
             <div class="card-body">
               <label class="button-item-card clickable ${dongle.mode === 1 ? "active" : ""}">
                 <div class="button-item-left">
                   <input type="radio" name="dongleMode" value="1" ${dongle.mode === 1 ? "checked" : ""}>
                   <div class="button-item-details">
-                    <span class="button-item-name">Mode 1: Low Battery Alert Only</span>
-                    <span class="button-item-binding">LED stays off and blinks red only when the battery drops below 15%</span>
+                    <span class="button-item-name">${t("dongle.mode1")}</span>
+                    <span class="button-item-binding">${t("dongle.mode1Desc")}</span>
                   </div>
                 </div>
               </label>
@@ -62,8 +63,8 @@ export class DongleUI {
                 <div class="button-item-left">
                   <input type="radio" name="dongleMode" value="2" ${dongle.mode === 2 ? "checked" : ""}>
                   <div class="button-item-details">
-                    <span class="button-item-name">Mode 2: Dynamic Battery Level Indicator</span>
-                    <span class="button-item-binding">Displays Green (100%), Yellow (66%), Orange (33%), Red (Low)</span>
+                    <span class="button-item-name">${t("dongle.mode2")}</span>
+                    <span class="button-item-binding">${t("dongle.mode2Desc")}</span>
                   </div>
                 </div>
               </label>
@@ -72,8 +73,8 @@ export class DongleUI {
                 <div class="button-item-left">
                   <input type="radio" name="dongleMode" value="3" ${dongle.mode === 3 ? "checked" : ""}>
                   <div class="button-item-details">
-                    <span class="button-item-name">Mode 3: Live Polling Rate Indicator</span>
-                    <span class="button-item-binding">125 Hz (Red), 250 Hz (Blue), 500 Hz (Yellow), 1000 Hz (Orange), 2000 Hz (Purple), 4000 Hz (Green)</span>
+                    <span class="button-item-name">${t("dongle.mode3")}</span>
+                    <span class="button-item-binding">${t("dongle.mode3Desc")}</span>
                   </div>
                 </div>
               </label>
@@ -89,15 +90,15 @@ export class DongleUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("radio", 18)}
-                  2.4GHz RF Receiver Pairing
+                  ${t("dongle.pairTitle")}
                 </span>
-                <span class="card-desc">Pair this mouse with a new 1K or 4K USB receiver dongle</span>
+                <span class="card-desc">${t("dongle.pairDesc")}</span>
               </div>
             </div>
             <div class="card-body">
-              <p class="setting-help">Put the dongle in pairing mode and press Left + Middle + Right buttons for 3 seconds.</p>
+              <p class="setting-help">${t("dongle.pairHelp")}</p>
               <button class="btn accent self-start" id="startPairingBtn">
-                Launch 2.4GHz Pairing Wizard
+                ${t("dongle.pairBtn")}
               </button>
             </div>
           </div>
@@ -137,7 +138,7 @@ export class DongleUI {
 
   async openPairingWizard() {
     if (!transport.isConnected()) {
-      this.notify("Device must be connected via USB dongle to pair", "error");
+      this.notify(t("dongle.pairNeedConnection"), "error");
       return;
     }
 
@@ -153,8 +154,7 @@ export class DongleUI {
     const progressEl = this.pairingModal.querySelector("#pairingProgressFill");
     if (statusEl) {
       statusEl.className = "wizard-status-badge in-progress";
-      statusEl.textContent =
-        "Pairing mode active. Hold Left + Middle + Right for 3 seconds";
+      statusEl.textContent = t("dongle.holdInstruction");
     }
 
     try {
@@ -174,16 +174,16 @@ export class DongleUI {
             clearInterval(this.pairingPollTimer);
             if (statusEl) {
               statusEl.className = "wizard-status-badge success";
-              statusEl.textContent = "Pairing successful. Device linked.";
+              statusEl.textContent = t("dongle.success");
             }
-            this.notify("2.4GHz Receiver paired successfully!", "success");
+            this.notify(t("dongle.successToast"), "success");
             setTimeout(() => this.closePairingWizard(), 2000);
             return;
           } else if (state === 3) {
             clearInterval(this.pairingPollTimer);
             if (statusEl) {
               statusEl.className = "wizard-status-badge error";
-              statusEl.textContent = "Pairing Failed. Please try again.";
+              statusEl.textContent = t("dongle.failed");
             }
             return;
           }
@@ -193,14 +193,14 @@ export class DongleUI {
           clearInterval(this.pairingPollTimer);
           if (statusEl) {
             statusEl.className = "wizard-status-badge error";
-            statusEl.textContent = "Pairing Timed Out. Please retry.";
+            statusEl.textContent = t("dongle.timeout");
           }
         }
       }, 500);
     } catch (err) {
       if (statusEl) {
         statusEl.className = "wizard-status-badge error";
-        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.textContent = t("sensor.calibFail", { err: err.message });
       }
     }
   }

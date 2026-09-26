@@ -110,12 +110,24 @@
           >-</span
         >
 
-        <button class="btn accent sm" id="connectHeaderBtn">Connect</button>
+        <select
+          class="select-sm lang-select"
+          id="langSelect"
+          data-i18n-title="header.language"
+          aria-label="Language"
+        >
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+
+        <button class="btn accent sm" id="connectHeaderBtn" data-i18n="header.connect">
+          Connect
+        </button>
 
         <button
           class="decor-toggle"
           id="themeToggleBtn"
-          title="Toggle dark mode"
+          data-i18n-title="header.toggleTheme"
         >
           <svg
             id="themeIconSun"
@@ -193,27 +205,27 @@
           USB-C cable and click Connect.
         </p>
         <button class="btn accent lg block" id="retryBtn">
-          <svg
-            class="lucide lucide-plug-zap"
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"
-            />
-            <path d="m2 22 3-3" />
-            <path d="M7.5 13.5 10 11" />
-            <path d="M10.5 16.5 13 14" />
-            <path d="m18 3-4 4h6l-4 4" />
-          </svg>
-          Connect Device
+            <svg
+              class="lucide lucide-plug-zap"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"
+              />
+              <path d="m2 22 3-3" />
+              <path d="M7.5 13.5 10 11" />
+              <path d="M10.5 16.5 13 14" />
+              <path d="m18 3-4 4h6l-4 4" />
+            </svg>
+            <span data-i18n="overlay.retry">Connect Device</span>
         </button>
       </div>
     </div>
@@ -221,14 +233,14 @@
     <div id="appWrapper" class="app-wrapper offline">
       <div class="toolbar-bar">
         <div class="toolbar-left">
-          <span class="toolbar-label">Profile</span>
+          <span class="toolbar-label" data-i18n="toolbar.profile">Profile</span>
           <div class="profile-picker">
             <button class="profile-btn active" data-profile="0">
-              Profile 1
+              <span data-i18n="toolbar.profile1">Profile 1</span>
             </button>
-            <button class="profile-btn" data-profile="1">Profile 2</button>
-            <button class="profile-btn" data-profile="2">Profile 3</button>
-            <button class="profile-btn" data-profile="3">Profile 4</button>
+            <button class="profile-btn" data-profile="1"><span data-i18n="toolbar.profile2">Profile 2</span></button>
+            <button class="profile-btn" data-profile="2"><span data-i18n="toolbar.profile3">Profile 3</span></button>
+            <button class="profile-btn" data-profile="3"><span data-i18n="toolbar.profile4">Profile 4</span></button>
           </div>
         </div>
 
@@ -249,7 +261,7 @@
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
               <path d="M3 3v5h5" />
             </svg>
-            Read
+            <span data-i18n="toolbar.read">Read</span>
           </button>
           <button id="commitBtn" class="btn sm accent" disabled>
             <svg
@@ -266,7 +278,7 @@
             >
               <path d="M20 6 9 17l-5-5" />
             </svg>
-            Commit
+            <span data-i18n="toolbar.commit">Commit</span>
           </button>
           <button id="exportBtn" class="btn sm" disabled>
             <svg
@@ -285,7 +297,7 @@
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <path d="m7 10 5 5 5-5" />
             </svg>
-            Export
+            <span data-i18n="toolbar.export">Export</span>
           </button>
           <button id="importBtn" class="btn sm" disabled>
             <svg
@@ -304,10 +316,10 @@
               <path d="m17 8-5-5-5 5" />
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             </svg>
-            Import
+            <span data-i18n="toolbar.import">Import</span>
           </button>
           <input type="file" id="importFileInput" accept=".json" hidden />
-          <button id="resetBtn" class="btn sm danger" disabled>Reset</button>
+          <button id="resetBtn" class="btn sm danger" disabled data-i18n="toolbar.reset">Reset</button>
         </div>
       </div>
 
@@ -329,7 +341,7 @@
               <rect x="5" y="2" width="14" height="20" rx="7" />
               <path d="M12 6v4" />
             </svg>
-            Buttons & Binds
+            <span data-i18n="nav.buttons">Buttons & Binds</span>
           </button>
           <button class="nav-tab" data-tab="dpi">
             <svg
@@ -347,7 +359,7 @@
               <path d="m12 14 4-4" />
               <path d="M3.34 19a10 10 0 1 1 17.32 0" />
             </svg>
-            DPI & Performance
+            <span data-i18n="nav.dpi">DPI & Performance</span>
           </button>
           <button class="nav-tab" data-tab="sensor">
             <svg
@@ -373,7 +385,7 @@
               <path d="M9 2v2" />
               <path d="M9 20v2" />
             </svg>
-            Sensor & Advanced
+            <span data-i18n="nav.sensor">Sensor & Advanced</span>
           </button>
           <button class="nav-tab" data-tab="dongle">
             <svg
@@ -394,7 +406,7 @@
               <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5" />
               <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
             </svg>
-            Receiver & Pairing
+            <span data-i18n="nav.dongle">Receiver & Pairing</span>
           </button>
           <button class="nav-tab" data-tab="shortcuts">
             <svg
@@ -419,7 +431,7 @@
               <path d="M16 12h.001" />
               <path d="M7 16h10" />
             </svg>
-            Shortcuts
+            <span data-i18n="nav.shortcuts">Shortcuts</span>
           </button>
           <button class="nav-tab" data-tab="macro">
             <svg
@@ -437,7 +449,7 @@
               <polyline points="4 17 10 11 4 5" />
               <line x1="12" x2="20" y1="19" y2="19" />
             </svg>
-            Macro Manager
+            <span data-i18n="nav.macro">Macro Manager</span>
           </button>
           <button class="nav-tab" data-tab="firmware">
             <svg
@@ -456,7 +468,7 @@
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <path d="m7 10 5 5 5-5" />
             </svg>
-            Firmware Update
+            <span data-i18n="nav.firmware">Firmware Update</span>
           </button>
         </nav>
 
@@ -489,7 +501,7 @@
         <div class="modal-header">
           <div>
             <h3 class="modal-title" id="modalButtonName">Rebind Button</h3>
-            <span class="modal-subtitle"
+            <span class="modal-subtitle" data-i18n="bind.modalSubtitle"
               >Choose a physical hardware action or multimedia key</span
             >
           </div>
@@ -516,8 +528,8 @@
           <div id="bindOptionsPane" class="bind-options-pane"></div>
         </div>
         <div class="modal-footer">
-          <button class="btn ghost" id="cancelBindBtn">Cancel</button>
-          <button class="btn accent" id="saveBindBtn">Save Binding</button>
+          <button class="btn ghost" id="cancelBindBtn" data-i18n="bind.cancel">Cancel</button>
+          <button class="btn accent" id="saveBindBtn" data-i18n="bind.save">Save Binding</button>
         </div>
       </div>
     </div>
@@ -526,8 +538,8 @@
       <div class="modal-card">
         <div class="modal-header">
           <div>
-            <h3 class="modal-title">2.4GHz Wireless Pairing Wizard</h3>
-            <span class="modal-subtitle"
+            <h3 class="modal-title" data-i18n="dongle.wizardTitle">2.4GHz Wireless Pairing Wizard</h3>
+            <span class="modal-subtitle" data-i18n="dongle.wizardSub"
               >Sync your mouse to a 1K or 4K USB receiver dongle</span
             >
           </div>
@@ -571,8 +583,8 @@
                 <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19" />
               </svg>
             </div>
-            <h4 class="wizard-title">Scanning for Mouse Broadcast</h4>
-            <p class="wizard-instruction">
+            <h4 class="wizard-title" data-i18n="dongle.scanning">Scanning for Mouse Broadcast</h4>
+            <p class="wizard-instruction" data-i18n-html="dongle.instructionHtml">
               Press and hold
               <strong>Left + Middle (Wheel) + Right</strong> buttons
               simultaneously for <strong>3 seconds</strong> until the yellow LED
@@ -584,6 +596,7 @@
             <span
               id="pairingStatusBadge"
               class="wizard-status-badge in-progress"
+              data-i18n="dongle.inProgress"
               >Pairing in Progress...</span
             >
           </div>
@@ -595,8 +608,8 @@
       <div class="modal-card">
         <div class="modal-header">
           <div>
-            <h3 class="modal-title">Sensor Surface Calibration (MTK)</h3>
-            <span class="modal-subtitle"
+            <h3 class="modal-title" data-i18n="sensor.calibBtn">Sensor Surface Calibration (MTK)</h3>
+            <span class="modal-subtitle" data-i18n="sensor.calibDesc"
               >Auto-tune laser reflection & lift-off distance for your
               mousepad</span
             >
@@ -641,8 +654,8 @@
                 <line x1="12" x2="12" y1="22" y2="18" />
               </svg>
             </div>
-            <h4 class="wizard-title">Calibrating Optical Sensor</h4>
-            <p class="wizard-instruction">
+            <h4 class="wizard-title" data-i18n="sensor.calibStatusTitle">Calibrating Optical Sensor</h4>
+            <p class="wizard-instruction" data-i18n-html="sensor.calibInstructionHtml">
               Move your mouse continuously in circles across your mousepad for
               <strong>5 seconds</strong> while calibration is running.
             </p>
@@ -655,6 +668,7 @@
             <span
               id="calibrationStatusBadge"
               class="wizard-status-badge in-progress"
+              data-i18n="sensor.calibBrief"
               >Calibrating...</span
             >
           </div>
@@ -666,8 +680,8 @@
       <div class="modal-card">
         <div class="modal-header">
           <div>
-            <h3 class="modal-title">Firmware Update</h3>
-            <span class="modal-subtitle"
+            <h3 class="modal-title" data-i18n="fw.modalTitle">Firmware Update</h3>
+            <span class="modal-subtitle" data-i18n="fw.modalSub"
               >USB DFU transfer. Do not unplug the device until it
               finishes</span
             >
@@ -710,10 +724,10 @@
                 <path d="m7 10 5 5 5-5" />
               </svg>
             </div>
-            <h4 class="wizard-title" id="firmwareWizardTitle">
+            <h4 class="wizard-title" id="firmwareWizardTitle" data-i18n="fw.wizardTitle">
               Flashing Firmware
             </h4>
-            <p class="wizard-instruction" id="firmwareWizardSub">
+            <p class="wizard-instruction" id="firmwareWizardSub" data-i18n="fw.wizardSub">
               The device is being put into its USB DFU bootloader and the image
               is transferred in 32-byte chunks.
             </p>
@@ -723,9 +737,10 @@
             <span
               id="firmwareStatusBadge"
               class="wizard-status-badge in-progress"
+              data-i18n="fw.starting"
               >Starting...</span
             >
-            <div class="firmware-pick" id="firmwarePickBootTip">
+            <div class="firmware-pick" id="firmwarePickBootTip" data-i18n="fw.bootTip">
               Press the button and select the bootloader device in the browser
               dialog.
             </div>
@@ -733,6 +748,7 @@
               class="btn accent sm mt-md"
               id="firmwarePickBootBtn"
               style="display: none"
+              data-i18n="fw.pickBoot"
             >
               Select Bootloader Device
             </button>
@@ -740,8 +756,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn ghost" id="firmwareAbortBtn">Abort</button>
-          <button class="btn accent" id="firmwareCloseBtn">Close</button>
+          <button class="btn ghost" id="firmwareAbortBtn" data-i18n="fw.abort">Abort</button>
+          <button class="btn accent" id="firmwareCloseBtn" data-i18n="fw.close">Close</button>
         </div>
       </div>
     </div>

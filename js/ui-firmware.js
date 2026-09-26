@@ -1,6 +1,7 @@
 import { stateManager } from "./state.js";
 import { transport } from "./transport.js";
 import { MouseApi } from "./mouse-api.js";
+import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 import {
   parseUpgradeFile,
@@ -71,19 +72,19 @@ export class FirmwareUI {
       ? ""
       : file.ok
         ? match && match.ok
-          ? `<span class="device-badge firmware-badge success">${icon("checkCircle", 12, "var(--success)")} Valid & matches device</span>`
-          : `<span class="device-badge firmware-badge warning">${icon("alertTriangle", 12, "var(--warning)")} Does not match device</span>`
-        : `<span class="device-badge firmware-badge danger">${icon("alertCircle", 12, "var(--danger)")} Invalid file</span>`;
+          ? `<span class="device-badge firmware-badge success">${icon("checkCircle", 12, "var(--success)")} ${t("fw.badgeValid")}</span>`
+          : `<span class="device-badge firmware-badge warning">${icon("alertTriangle", 12, "var(--warning)")} ${t("fw.badgeMismatch")}</span>`
+        : `<span class="device-badge firmware-badge danger">${icon("alertCircle", 12, "var(--danger)")} ${t("fw.badgeInvalid")}</span>`;
 
     const fileInfo = !file
-      ? `<p class="setting-help">Drop a <code>.bin</code> upgrade file from Redragon's driver package to load firmware.</p>`
+      ? `<p class="setting-help">${t("fw.dropHelpHtml")}</p>`
       : `<div class="firmware-meta">
-           <div><span>Target</span><strong>${CXFILE_TYPE_NAMES[file.header.deviceType] || file.header.deviceType}</strong></div>
-           <div><span>MCU (icName)</span><strong>${file.header.icName || "N/A"}</strong></div>
-           <div><span>CID / MID</span><strong>${file.header.cid} / ${file.header.mid}</strong></div>
-           <div><span>Version</span><strong>v${fileVersion || "?"}</strong></div>
-           <div><span>FW length</span><strong>${file.header.fwLength.toLocaleString()} B</strong></div>
-           <div><span>File size</span><strong>${file.bytes.length.toLocaleString()} B</strong></div>
+           <div><span>${t("fw.metaTarget")}</span><strong>${CXFILE_TYPE_NAMES[file.header.deviceType] ? t(`fw.type.${file.header.deviceType}`) : file.header.deviceType}</strong></div>
+           <div><span>${t("fw.metaMcu")}</span><strong>${file.header.icName || t("common.na")}</strong></div>
+           <div><span>${t("fw.metaCidMid")}</span><strong>${file.header.cid} / ${file.header.mid}</strong></div>
+           <div><span>${t("fw.metaVersion")}</span><strong>v${fileVersion || "?"}</strong></div>
+           <div><span>${t("fw.metaFwLen")}</span><strong>${file.header.fwLength.toLocaleString()} B</strong></div>
+           <div><span>${t("fw.metaFileSize")}</span><strong>${file.bytes.length.toLocaleString()} B</strong></div>
          </div>`;
 
     const matchErrors =
@@ -110,40 +111,40 @@ export class FirmwareUI {
           <div class="card">
             <div class="card-header">
               <div class="card-title-group">
-                <span class="card-title">${icon("zap", 18)} Firmware Update</span>
-                <span class="card-desc">Flash the mouse MCU (CX52850P) or the receiver dongle (CX52650N / CH32V305)</span>
+                <span class="card-title">${icon("zap", 18)} ${t("fw.title")}</span>
+                <span class="card-desc">${t("fw.desc")}</span>
               </div>
               <span class="device-badge">${
                 isWired
-                  ? "Wired USB, ready to update"
-                  : "Wireless, plug in the USB cable first"
+                  ? t("fw.readyBadge")
+                  : t("fw.wirelessBadge")
               }</span>
             </div>
             <div class="card-body">
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Mouse firmware (current)</span>
-                  <span class="setting-help">Reported by the device. The 1K RF dongle echoes it, so it may read blank on wireless links</span>
+                  <span class="setting-label">${t("fw.mouseFw")}</span>
+                  <span class="setting-help">${t("fw.mouseFwHelp")}</span>
                 </div>
                 <strong class="font-mono">v${state.version || "?.?"}</strong>
               </div>
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Receiver firmware (current)</span>
-                  <span class="setting-help">Not readable from the HID feature interface used by this app</span>
+                  <span class="setting-label">${t("fw.dongleFw")}</span>
+                  <span class="setting-help">${t("fw.dongleFwHelp")}</span>
                 </div>
-                <strong class="font-mono">N/A</strong>
+                <strong class="font-mono">${t("common.na")}</strong>
               </div>
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Check for updates</span>
+                  <span class="setting-label">${t("fw.checkUpdates")}</span>
                   <span class="setting-help">${
                     FIRMWARE_MANIFEST_URL
-                      ? "Compares against the configured firmware manifest"
-                      : "The official driver ships .bin packages next to the exe. Load one below, or set FIRMWARE_MANIFEST_URL in js/firmware.js to enable update checks"
+                      ? t("fw.checkManifestHelp")
+                      : t("fw.checkNoManifestHelp")
                   }</span>
                 </div>
-                <button class="btn sm" id="checkUpdatesBtn">Check</button>
+                <button class="btn sm" id="checkUpdatesBtn">${t("fw.checkBtn")}</button>
               </div>
             </div>
           </div>
@@ -153,8 +154,8 @@ export class FirmwareUI {
           <div class="card">
             <div class="card-header">
               <div class="card-title-group">
-                <span class="card-title">${icon("upload", 18)} Update Package (.bin)</span>
-                <span class="card-desc">A packaged upgrade file: 728-byte header + images</span>
+                <span class="card-title">${icon("upload", 18)} ${t("fw.packageTitle")}</span>
+                <span class="card-desc">${t("fw.packageDesc")}</span>
               </div>
               ${fileBadge}
             </div>
@@ -163,8 +164,8 @@ export class FirmwareUI {
                 <input type="file" id="firmwareFileInput" accept=".bin,.hex" hidden />
                 <div class="firmware-drop-inner">
                   ${icon("upload", 20, "var(--text-muted)")}
-                  <span>Choose or drop a <code>.bin</code> upgrade file</span>
-                  <button class="btn sm" id="pickFileBtn">Browse...</button>
+                  <span>${t("fw.dropTextHtml")}</span>
+                  <button class="btn sm" id="pickFileBtn">${t("fw.browse")}</button>
                 </div>
               </div>
               <div class="mt-md">${fileInfo}</div>
@@ -175,10 +176,10 @@ export class FirmwareUI {
               }
               <div class="firmware-actions">
                 <button class="btn ghost" id="traceBtn" ${canFlash ? "" : "disabled"}>
-                  ${icon("terminal", 13)} Trace (dry run)
+                  ${icon("terminal", 13)} ${t("fw.trace")}
                 </button>
                 <button class="btn accent" id="flashBtn" ${canFlash ? "" : "disabled"}>
-                  ${icon("zap", 13)} Start Update
+                  ${icon("zap", 13)} ${t("fw.start")}
                 </button>
               </div>
             </div>
@@ -255,13 +256,10 @@ export class FirmwareUI {
     try {
       const list = await fetchFirmwareManifest();
       if (!list) {
-        this.notify(
-          "No update manifest is configured. The official app ships .bin packages without a server. Load one above.",
-          "warning",
-        );
+        this.notify(t("fw.manifestNone"), "warning");
         return;
       }
-      const devInfo = transport.getDeviceInfo();
+      const devInfo = this.getDeviceIdentity();
       const matches = list.filter(
         (item) =>
           devInfo &&
@@ -270,14 +268,14 @@ export class FirmwareUI {
       );
       if (matches.length) {
         this.notify(
-          `Firmware v${formatVersion(matches[0].version)} is available. Download the .bin and load it above.`,
+          t("fw.available", { v: formatVersion(matches[0].version) }),
           "info",
         );
       } else {
-        this.notify("No newer firmware listed for this device.", "success");
+        this.notify(t("fw.noNewer"), "success");
       }
     } catch (err) {
-      this.notify(`Update check failed: ${err.message}`, "error");
+      this.notify(t("fw.checkFail", { err: err.message }), "error");
     }
   }
 
@@ -349,11 +347,7 @@ export class FirmwareUI {
     }
 
     if (isReal) {
-      const ok = window.confirm(
-        "This will replace the firmware on your device and it must not be unplugged until it finishes.\n\n" +
-          "A failed or mismatched flash can brick the device. Only continue with a genuine Redragon .bin for your exact model, connected by USB cable.\n\n" +
-          "Continue?",
-      );
+      const ok = window.confirm(t("fw.confirm"));
       if (!ok) return;
     }
 
@@ -368,27 +362,24 @@ export class FirmwareUI {
 
     try {
       if (traceOnly) {
-        this.setStatus("Tracing frame stream (dry run)");
+        this.setStatus(t("fw.statusTrace"));
         const result = await this.updater.flash(file, { traceOnly: true });
-        this.setStatus(`Trace complete. ${result.frames} frames`, "success");
-        this.notify(
-          "Dry run finished. Nothing was written to the device.",
-          "success",
-        );
+        this.setStatus(t("fw.traceDone", { n: result.frames }), "success");
+        this.notify(t("fw.dryRunToast"), "success");
         return;
       }
 
-      this.setStatus("Requesting update mode...");
+      this.setStatus(t("fw.requesting"));
       await this.updater.enterUpdateMode();
 
-      this.setStatus("Waiting for bootloader device...");
+      this.setStatus(t("fw.waitingBoot"));
       await new Promise((r) => setTimeout(r, 1200));
       this.bootDevice = await this.updater.waitForBootDevice({
         timeoutMs: BOOT_WAIT_MS,
       });
 
       if (!this.bootDevice) {
-        this.setStatus("Bootloader not detected automatically");
+        this.setStatus(t("fw.bootNotFound"));
         this.showBootPicker();
         const pickBtn = this.modal.querySelector("#firmwarePickBootBtn");
         if (pickBtn) {
@@ -434,31 +425,33 @@ export class FirmwareUI {
   fail(err) {
     const aborted = /aborted by user/.test(err.message || "");
     this.setStatus(
-      aborted ? "Update aborted" : `Update failed: ${err.message}`,
+      aborted ? t("fw.aborted") : t("fw.failed", { err: err.message }),
       "error",
     );
     this.appendLog(`${aborted ? "ABORTED" : "ERROR"}: ${err.message}`);
-    if (!aborted) this.notify(`Update failed: ${err.message}`, "error");
+    if (!aborted) this.notify(t("fw.failed", { err: err.message }), "error");
   }
 
   async runFlash(file) {
-    this.setStatus("Flashing... 0%");
+    this.setStatus(t("fw.flashing", { pct: 0 }));
     const result = await this.updater.flash(file, {
       bootDevice: this.bootDevice,
     });
     this.setStatus(
-      result.traceOnly ? "Trace complete" : "Update complete",
+      result.traceOnly ? t("fw.traceComplete") : t("fw.updateComplete"),
       "success",
     );
     this.appendLog(
       result.traceOnly
-        ? "Trace only, no data was written."
-        : `Done: ${result.frames} chunks, ${result.bytes} bytes, ${result.ackCount} ACKs.`,
+        ? t("fw.traceLog")
+        : t("fw.doneLog", {
+            frames: result.frames,
+            bytes: result.bytes,
+            acks: result.ackCount,
+          }),
     );
     this.notify(
-      result.traceOnly
-        ? "Dry run finished."
-        : "Firmware update completed successfully!",
+      result.traceOnly ? t("fw.dryRunDone") : t("fw.successToast"),
       result.traceOnly ? "info" : "success",
     );
     if (!result.traceOnly) {

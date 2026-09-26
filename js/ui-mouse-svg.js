@@ -1,4 +1,5 @@
 import { stateManager, formatBindingSummary } from "./state.js";
+import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
 export class MouseSvgVisualizer {
@@ -20,11 +21,11 @@ export class MouseSvgVisualizer {
         <div class="segment-group">
           <button class="segment-btn ${this.currentView === "top" ? "active" : ""}" id="viewTopBtn">
             ${icon("mouse", 14)}
-            Top View (Keys 1-5)
+            ${t("svg.topView")}
           </button>
           <button class="segment-btn ${this.currentView === "bottom" ? "active" : ""}" id="viewBottomBtn">
             ${icon("scan", 14)}
-            Underside View (Key 6)
+            ${t("svg.bottomView")}
           </button>
         </div>
       </div>
@@ -43,15 +44,15 @@ export class MouseSvgVisualizer {
 
             <rect id="svg-btn-0" class="mouse-part mouse-button-part ${this.activeButtonIndex === 0 ? "active" : ""}"
               x="148" y="38" width="66" height="114" rx="12"
-              data-btn="0" title="Button 1: Left Click" />
+              data-btn="0" title="${t("svg.btnTitle", { n: 1, name: t("bind.mouse.1") })}" />
 
             <rect id="svg-btn-1" class="mouse-part mouse-button-part ${this.activeButtonIndex === 1 ? "active" : ""}"
               x="246" y="38" width="66" height="114" rx="12"
-              data-btn="1" title="Button 2: Right Click" />
+              data-btn="1" title="${t("svg.btnTitle", { n: 2, name: t("bind.mouse.2") })}" />
 
             <rect id="svg-btn-2" class="mouse-part mouse-wheel-part ${this.activeButtonIndex === 2 ? "active" : ""}"
               x="218" y="38" width="24" height="52" rx="12"
-              data-btn="2" title="Button 3: Middle Click" />
+              data-btn="2" title="${t("svg.btnTitle", { n: 3, name: t("bind.mouse.4") })}" />
 
             <line x1="220" y1="50" x2="240" y2="50" stroke="var(--mouse-wheel-line)" stroke-width="1.5" />
             <line x1="220" y1="62" x2="240" y2="62" stroke="var(--mouse-wheel-line)" stroke-width="1.5" />
@@ -59,11 +60,11 @@ export class MouseSvgVisualizer {
 
             <rect id="svg-btn-4" class="mouse-part mouse-button-part ${this.activeButtonIndex === 4 ? "active" : ""}"
               x="126" y="130" width="12" height="42" rx="6"
-              data-btn="4" title="Button 5: Side Forward" />
+              data-btn="4" title="${t("svg.btnTitle", { n: 5, name: t("bind.mouse.16") })}" />
 
             <rect id="svg-btn-3" class="mouse-part mouse-button-part ${this.activeButtonIndex === 3 ? "active" : ""}"
               x="126" y="180" width="12" height="42" rx="6"
-              data-btn="3" title="Button 4: Side Backward" />
+              data-btn="3" title="${t("svg.btnTitle", { n: 4, name: t("bind.mouse.8") })}" />
 
             <g id="pin-0" class="callout-pin ${this.activeButtonIndex === 0 ? "active" : ""}" data-btn="0" transform="translate(181, 95)">
               <rect x="-10" y="-10" width="20" height="20" rx="10" class="pin-circle" />
@@ -95,7 +96,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 0 ? "active" : ""}" style="top: 20px; left: 10px;" data-btn="0">
               <span class="btn-pin-badge">1</span>
               <div class="btn-info">
-                <span class="btn-name">Left Click</span>
+                <span class="btn-name">${t("btn.name.0")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[0])}</span>
               </div>
             </div>
@@ -103,7 +104,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 1 ? "active" : ""}" style="top: 20px; right: 10px;" data-btn="1">
               <span class="btn-pin-badge">2</span>
               <div class="btn-info">
-                <span class="btn-name">Right Click</span>
+                <span class="btn-name">${t("btn.name.1")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[1])}</span>
               </div>
             </div>
@@ -111,7 +112,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 2 ? "active" : ""}" style="top: -10px; left: 50%; transform: translateX(-50%);" data-btn="2">
               <span class="btn-pin-badge">3</span>
               <div class="btn-info">
-                <span class="btn-name">Middle Click</span>
+                <span class="btn-name">${t("btn.name.2")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[2])}</span>
               </div>
             </div>
@@ -119,7 +120,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 4 ? "active" : ""}" style="top: 130px; left: -15px;" data-btn="4">
               <span class="btn-pin-badge">5</span>
               <div class="btn-info">
-                <span class="btn-name">Side Forward</span>
+                <span class="btn-name">${t("btn.name.4")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[4])}</span>
               </div>
             </div>
@@ -127,7 +128,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 3 ? "active" : ""}" style="top: 200px; left: -15px;" data-btn="3">
               <span class="btn-pin-badge">4</span>
               <div class="btn-info">
-                <span class="btn-name">Side Backward</span>
+                <span class="btn-name">${t("btn.name.3")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[3])}</span>
               </div>
             </div>
@@ -135,7 +136,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 5 ? "active" : ""}" style="top: 290px; right: 10px;" data-btn="5">
               <span class="btn-pin-badge">6</span>
               <div class="btn-info">
-                <span class="btn-name">DPI Switch (Underside)</span>
+                <span class="btn-name">${t("btn.name.5.und")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[5])}</span>
               </div>
             </div>
@@ -158,7 +159,7 @@ export class MouseSvgVisualizer {
 
             <rect id="svg-btn-5" class="mouse-part mouse-button-part ${this.activeButtonIndex === 5 ? "active" : ""}"
               x="164" y="160" width="26" height="40" rx="12"
-              data-btn="5" title="Button 6: DPI Switch (Underside)" />
+              data-btn="5" title="${t("svg.btnTitle", { n: 6, name: t("btn.name.5.und") })}" />
 
             <g id="pin-5" class="callout-pin ${this.activeButtonIndex === 5 ? "active" : ""}" data-btn="5" transform="translate(177, 180)">
               <rect x="-10" y="-10" width="20" height="20" rx="10" class="pin-circle" />
@@ -173,7 +174,7 @@ export class MouseSvgVisualizer {
             <div class="button-callout-card ${this.activeButtonIndex === 5 ? "active" : ""}" style="top: 155px; left: 20px;" data-btn="5">
               <span class="btn-pin-badge">6</span>
               <div class="btn-info">
-                <span class="btn-name">DPI Switch</span>
+                <span class="btn-name">${t("btn.name.5")}</span>
                 <span class="btn-bind">${formatBindingSummary(binds[5])}</span>
               </div>
             </div>

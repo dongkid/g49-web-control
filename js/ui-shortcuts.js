@@ -1,5 +1,6 @@
 import { stateManager } from "./state.js";
 import { icon } from "./icons.js";
+import { t } from "./i18n.js";
 import {
   SHORTCUT_COUNT,
   SHORTCUT_MAX_KEYS,
@@ -35,9 +36,9 @@ export class ShortcutsUI {
             <div class="card-title-group">
               <span class="card-title">
                 ${icon("keyboard", 18)}
-                Shortcut Key Slots (${shortcuts.length} / ${SHORTCUT_COUNT})
+                ${t("sc.title", { n: shortcuts.length, max: SHORTCUT_COUNT })}
               </span>
-              <span class="card-desc">Stored key combinations played by shortcut bindings</span>
+              <span class="card-desc">${t("sc.desc")}</span>
             </div>
           </div>
           <div class="card-body scroll-list">
@@ -47,13 +48,13 @@ export class ShortcutsUI {
               const summary =
                 keys.length > 0
                   ? keys.map((k) => this.labelFor(k)).join(" + ")
-                  : "Empty";
+                  : t("sc.empty");
               return `
                 <div class="button-item-card clickable ${this.activeSlot === i ? "active" : ""}" data-slot="${i}">
                   <div class="button-item-left">
                     <span class="button-item-index">${i + 1}</span>
                     <div class="button-item-details">
-                      <span class="button-item-name">Shortcut #${i + 1}</span>
+                      <span class="button-item-name">${t("sc.name", { n: i + 1 })}</span>
                       <span class="button-item-binding">${summary}</span>
                     </div>
                   </div>
@@ -68,20 +69,20 @@ export class ShortcutsUI {
             <div class="card-title-group">
               <span class="card-title">
                 ${icon("penLine", 18)}
-                Shortcut #${this.activeSlot + 1} Editor
+                ${t("sc.editorTitle", { n: this.activeSlot + 1 })}
               </span>
-              <span class="card-desc">Up to ${SHORTCUT_MAX_KEYS} keys in sequence</span>
+              <span class="card-desc">${t("sc.editorDesc", { n: SHORTCUT_MAX_KEYS })}</span>
             </div>
-            <button class="btn sm danger" id="clearShortcutBtn">Clear</button>
+            <button class="btn sm danger" id="clearShortcutBtn">${t("sc.clear")}</button>
           </div>
           <div class="card-body">
             <div class="flex-between mt-md">
-              <span class="setting-label">Keys (${this.currentKeys().length} / ${SHORTCUT_MAX_KEYS})</span>
+              <span class="setting-label">${t("sc.keys", { n: this.currentKeys().length, max: SHORTCUT_MAX_KEYS })}</span>
               <div class="flex-gap-xs">
                 <button class="btn sm ${this.isRecording ? "danger" : "accent"}" id="recordShortcutKeyBtn">
-                  ${this.isRecording ? "Press Key..." : `${icon("plus", 14)} Add Key`}
+                  ${this.isRecording ? t("sc.pressKey") : `${icon("plus", 14)} ${t("sc.addKey")}`}
                 </button>
-                <button class="btn sm" id="addClickShortcutBtn" ${this.currentKeys().length >= SHORTCUT_MAX_KEYS ? "disabled" : ""}>${icon("plus", 14)} Click</button>
+                <button class="btn sm" id="addClickShortcutBtn" ${this.currentKeys().length >= SHORTCUT_MAX_KEYS ? "disabled" : ""}>${icon("plus", 14)} ${t("sc.click")}</button>
               </div>
             </div>
             <div id="shortcutKeysList" class="step-list">
@@ -94,18 +95,18 @@ export class ShortcutsUI {
                   <span class="step-idx">${idx + 1}</span>
                   <span class="badge font-mono">${key.type === "mouse" ? "mouse" : key.type === "mod" ? "mod" : "key"}</span>
                   <span class="step-value">${this.labelFor(key)}</span>
-                  <button class="btn sm ghost icon-danger delete-shortcut-key-btn" data-index="${idx}" title="Remove Key">${icon("x", 12, "var(--danger)")}</button>
+                  <button class="btn sm ghost icon-danger delete-shortcut-key-btn" data-index="${idx}" title="${t("sc.removeKey")}">${icon("x", 12, "var(--danger)")}</button>
                 </div>
               `,
                       )
                       .join("")
                   : `<p class="empty-hint">
-                No keys. Press "+ Add Key" and type, or add a mouse click.
+                ${t("sc.emptyHint")}
               </p>`
               }
             </div>
             <p class="setting-help mt-md">
-              Bind a shortcut via the Buttons tab using the Multimedia / Shortcut action.
+              ${t("sc.bindHint")}
             </p>
           </div>
         </div>
@@ -124,13 +125,8 @@ export class ShortcutsUI {
     if (!key) return "";
     if (key.type === "mouse") {
       return (
-        {
-          1: "Left Click",
-          2: "Right Click",
-          4: "Middle Click",
-          8: "Side Backward",
-          16: "Side Forward",
-        }[key.hidCode] || `Click 0x${key.hidCode.toString(16)}`
+        t(`bind.mouse.${key.hidCode}`, null, null) ||
+        `Click 0x${key.hidCode.toString(16)}`
       );
     }
     if (key.type === "mod") {

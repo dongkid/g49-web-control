@@ -2,6 +2,7 @@ import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
 import { SENSORS, SENSOR_IDS, getActiveSensor, getActiveSensorId, setActiveSensorId } from "./sensors.js";
+import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
 export class SensorUI {
@@ -44,7 +45,7 @@ export class SensorUI {
       .map(
         (s) =>
           `<option value="${s.id}" ${s.id === getActiveSensorId() ? "selected" : ""}>
-            ${s.label} — ${s.modelHint}
+            ${s.label} — ${t(s.modelHintKey, null, s.modelHint)}
           </option>`,
       )
       .join("");
@@ -53,8 +54,8 @@ export class SensorUI {
       ? `
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Motion Sync</span>
-                  <span class="setting-help">Synchronizes sensor frames with USB polling for 1:1 input linearity</span>
+                  <span class="setting-label">${t("sensor.motionSync")}</span>
+                  <span class="setting-help">${t("sensor.motionSyncHelp")}</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="motionSyncSwitch" ${p.motionSync ? "checked" : ""}>
@@ -72,16 +73,16 @@ export class SensorUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("cpu", 18)}
-                  ${sensor.label} Optical Tracking
+                  ${t("sensor.trackingTitle", { sensor: sensor.label })}
                 </span>
-                <span class="card-desc">Sensor calibration and synchronization parameters</span>
+                <span class="card-desc">${t("sensor.desc")}</span>
               </div>
             </div>
             <div class="card-body">
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Sensor Variant</span>
-                  <span class="setting-help">Pick the sensor your model shipped with — it changes DPI encoding and available options</span>
+                  <span class="setting-label">${t("sensor.variant")}</span>
+                  <span class="setting-help">${t("sensor.variantHelp")}</span>
                 </div>
                 <select id="sensorSelect">${sensorOptions}</select>
               </div>
@@ -89,8 +90,8 @@ export class SensorUI {
 
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Ripple Control</span>
-                  <span class="setting-help">Filters high-frequency jitter at resolutions above 5000 DPI</span>
+                  <span class="setting-label">${t("sensor.ripple")}</span>
+                  <span class="setting-help">${t("sensor.rippleHelp")}</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="rippleControlSwitch" ${p.rippleControl ? "checked" : ""}>
@@ -100,8 +101,8 @@ export class SensorUI {
 
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Angle Snapping (Linear Correction)</span>
-                  <span class="setting-help">Assists in drawing straight horizontal and vertical lines</span>
+                  <span class="setting-label">${t("sensor.angleSnap")}</span>
+                  <span class="setting-help">${t("sensor.angleSnapHelp")}</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="linearCorrectionSwitch" ${p.linearCorrection ? "checked" : ""}>
@@ -118,15 +119,15 @@ export class SensorUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("crosshair", 18)}
-                  ${sensor.label} Surface Calibration
+                  ${t("sensor.calibTitle", { sensor: sensor.label })}
                 </span>
-                <span class="card-desc">Calibrates laser diode current and surface reflection coefficient for your mousepad</span>
+                <span class="card-desc">${t("sensor.calibDesc")}</span>
               </div>
             </div>
             <div class="card-body">
-              <p class="setting-help">Optimizes tracking precision and minimizes lift-off jitter on cloth, glass, or hybrid pads</p>
+              <p class="setting-help">${t("sensor.calibHelp")}</p>
               <button class="btn accent self-start" id="startCalibrationBtn">
-                Start Surface Calibration (MTK)
+                ${t("sensor.calibBtn")}
               </button>
             </div>
           </div>
@@ -140,16 +141,16 @@ export class SensorUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("radio", 18)}
-                  2.4GHz RF Front-End & Connectivity
+                  ${t("sensor.rfTitle")}
                 </span>
-                <span class="card-desc">Radio frequency transmission power and amplifier modes</span>
+                <span class="card-desc">${t("sensor.rfDesc")}</span>
               </div>
             </div>
             <div class="card-body">
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Long Range Mode (High-Power RF Amplifier)</span>
-                  <span class="setting-help">Boosts transmission strength to cut packet drops around dense 2.4GHz Wi-Fi</span>
+                  <span class="setting-label">${t("sensor.longRange")}</span>
+                  <span class="setting-help">${t("sensor.longRangeHelp")}</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="longRangeSwitch" ${state.longRangeMode ? "checked" : ""}>
@@ -164,16 +165,16 @@ export class SensorUI {
               <div class="card-title-group">
                 <span class="card-title">
                   ${icon("battery", 18)}
-                  Power Management & Sleep Timers
+                  ${t("sensor.powerTitle")}
                 </span>
-                <span class="card-desc">Low-power sleep modes and battery optimization</span>
+                <span class="card-desc">${t("sensor.powerDesc")}</span>
               </div>
             </div>
             <div class="card-body">
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Sensor ECO Power Saving</span>
-                  <span class="setting-help">Reduces sensor LED current in wireless mode for longer battery life</span>
+                  <span class="setting-label">${t("sensor.eco")}</span>
+                  <span class="setting-help">${t("sensor.ecoHelp")}</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="powerSavingSwitch" ${p.powerSaving ? "checked" : ""}>
@@ -183,8 +184,8 @@ export class SensorUI {
 
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Deep Sleep Inactivity</span>
-                  <span class="setting-help">Allow MCU to enter ultra-low-power sleep when idle</span>
+                  <span class="setting-label">${t("sensor.deepSleep")}</span>
+                  <span class="setting-help">${t("sensor.deepSleepHelp")}</span>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="sleepEnableSwitch" ${p.customSleepEnable !== false ? "checked" : ""}>
@@ -195,8 +196,8 @@ export class SensorUI {
               <div id="sleepTimeWrap" style="${p.customSleepEnable !== false ? "" : "opacity: 0.4; pointer-events: none;"}">
                 <div class="setting-row">
                   <div class="setting-info">
-                    <span class="setting-label">Inactivity Timeout</span>
-                    <span class="setting-help">Idle time before MCU deep sleep engages (1 to 254 min)</span>
+                    <span class="setting-label">${t("sensor.timeout")}</span>
+                    <span class="setting-help">${t("sensor.timeoutHelp")}</span>
                   </div>
                   <div class="num-input-wrap">
                     <input type="number" id="sleepTimeNum" min="1" max="254" value="${Math.min(254, Math.max(1, p.sensorSleepTime || 2))}">
@@ -309,7 +310,7 @@ export class SensorUI {
 
   async openCalibrationWizard() {
     if (!transport.isConnected()) {
-      this.notify("Device must be connected to calibrate", "error");
+      this.notify(t("sensor.calibMustConnect"), "error");
       return;
     }
 
@@ -323,8 +324,7 @@ export class SensorUI {
 
     if (statusEl) {
       statusEl.className = "wizard-status-badge in-progress";
-      statusEl.textContent =
-        "Calibrating: Move mouse in circles across your pad...";
+      statusEl.textContent = t("sensor.calibStatus");
     }
 
     try {
@@ -342,10 +342,10 @@ export class SensorUI {
           clearInterval(this.calibrationTimer);
           if (statusEl) {
             statusEl.className = "wizard-status-badge success";
-            statusEl.textContent = "Surface Calibration Complete!";
+            statusEl.textContent = t("sensor.calibDone");
           }
           this.notify(
-            `Sensor surface calibration applied to ${getActiveSensor().label}!`,
+            t("sensor.calibApplied", { sensor: getActiveSensor().label }),
             "success",
           );
           setTimeout(() => this.closeCalibrationWizard(), 2000);
@@ -354,7 +354,7 @@ export class SensorUI {
     } catch (err) {
       if (statusEl) {
         statusEl.className = "wizard-status-badge error";
-        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.textContent = t("sensor.calibFail", { err: err.message });
       }
     }
   }

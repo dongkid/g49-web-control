@@ -25,6 +25,7 @@ export const SENSORS = {
     id: SENSOR_IDS.PAW3395,
     label: "PixArt PAW3395",
     modelHint: "M916 Pro 1K / 4K",
+    modelHintKey: "sensor.hint.pro",
     maxDpi: 26000,
     capabilities: {
       motionSync: true,
@@ -37,6 +38,7 @@ export const SENSORS = {
     id: SENSOR_IDS.PAW3311,
     label: "PixArt PAW3311",
     modelHint: "Redragon G49 base (CID 23 / MID 4)",
+    modelHintKey: "sensor.hint.g49",
     maxDpi: 24000,
     capabilities: {
       motionSync: false,

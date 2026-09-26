@@ -1,5 +1,6 @@
 import { UsbCommandID, REPORT_ID, USB_VID, DEVICE_MODELS } from "./protocol.js";
 import { transport } from "./transport.js";
+import { t } from "./i18n.js";
 
 export const HEADER_LEN = 24 + 11 * 64;
 export const BOOT_SIZE = 0x2000;
@@ -59,7 +60,9 @@ export function parseUpgradeFile(buf) {
     return {
       ok: false,
       errors: [
-        buf ? `File too small: ${buf.length} bytes` : "No file selected",
+        buf
+          ? t("fw.err.tooSmallFile", { n: buf.length })
+          : t("fw.err.noFile"),
       ],
     };
   }
@@ -98,23 +101,20 @@ export function parseUpgradeFile(buf) {
     header.deviceType !== CXFILE_TYPE.Mouse &&
     header.deviceType !== CXFILE_TYPE.Dongle
   ) {
-    errors.push(
-      `Unsupported file type ${header.deviceType}. Expected 210 (mouse) or 211 (dongle)`,
-    );
+    errors.push(t("fw.err.unsupportedType", { t: header.deviceType }));
   }
   if (header.cid !== 23)
-    errors.push(`CID ${header.cid} is not this device's CID (23)`);
+    errors.push(t("fw.err.badCid", { c: header.cid }));
   if (header.mid !== 4 && header.mid !== 5 && header.mid !== 6) {
-    errors.push(`MID ${header.mid} is unknown (4 = G49, 5 = 1K Pro, 6 = 4K)`);
+    errors.push(t("fw.err.unknownMid", { m: header.mid }));
   }
-  if (!header.icName) errors.push("icName field is empty");
+  if (!header.icName) errors.push(t("fw.err.noIcName"));
   if (header.downloadAddr >>> 16 === 0xffff) {
-    errors.push("File has no valid download address");
+    errors.push(t("fw.err.badDownloadAddr"));
   }
   if (header.fwLength < CHUNK_DATA)
-    errors.push(`fwLength ${header.fwLength} is implausibly small`);
-  if (buf.length < BOOT_SIZE)
-    errors.push("File is smaller than the 8 KB boot section");
+    errors.push(t("fw.err.fwTooSmall", { n: header.fwLength }));
+  if (buf.length < BOOT_SIZE) errors.push(t("fw.err.tooSmallBoot"));
 
   return { ok: errors.length === 0, errors, header, bytes: buf };
 }
@@ -137,7 +137,7 @@ export function matchUpgradeFile(parsed, devInfo) {
 
   if (!devInfo) {
     out.ok = false;
-    out.errors.push("No device connected");
+    out.errors.push(t("fw.err.noDevice"));
     return out;
   }
   if (errors.length) {
@@ -146,33 +146,30 @@ export function matchUpgradeFile(parsed, devInfo) {
   }
   if (!isDongleFile && !/wired/i.test(devInfo.mode || "")) {
     out.ok = false;
-    out.errors.push(
-      "The mouse must be connected by USB cable to get a firmware update. Flashing over RF can brick it.",
-    );
+    out.errors.push(t("fw.err.notWired"));
   }
   if (isDongleFile && !deviceIsDongle) {
     out.ok = false;
-    out.errors.push(
-      "This file targets the receiver dongle. Plug the dongle into USB to update it.",
-    );
+    out.errors.push(t("fw.err.dongleFile"));
   }
   if (!isDongleFile && header.mid !== devInfo.mid) {
     out.ok = false;
     out.errors.push(
-      `MID mismatch: file targets ${header.mid}, connected device is ${devInfo.mid}`,
+      t("fw.err.midMismatch", { file: header.mid, dev: devInfo.mid }),
     );
   }
   if (header.cid !== devInfo.cid) {
     out.errors.push(
-      `CID mismatch: file targets ${header.cid}, device reports ${devInfo.cid}`,
+      t("fw.err.cidMismatch", { file: header.cid, dev: devInfo.cid }),
     );
   }
   if (!icNameMatches(header, devInfo)) {
     out.ok = false;
     out.errors.push(
-      `MCU mismatch: this target needs ${
-        isDongleFile ? "CX52650N (1K) or CH32V305 (4K)" : "CX52850P"
-      } but the file carries icName "${header.icName}".`,
+      t("fw.err.mcuMismatch", {
+        expect: isDongleFile ? "CX52650N (1K) or CH32V305 (4K)" : "CX52850P",
+        actual: header.icName,
+      }),
     );
   }
   return out;
@@ -232,10 +229,7 @@ async function sendBootReport(dev, payload) {
       }
     }
   }
-  throw new Error(
-    `Could not send bootloader report${lastErr ? ` (${lastErr.message})` : ""}. ` +
-      "The bootloader may use a different report layout. Use Trace mode to inspect frames.",
-  );
+  throw new Error(t("fw.err.bootReport"));
 }
 
 export function buildChunkFrame(cmdByte, addr, payloadLen, isLast, data32) {
@@ -374,7 +368,7 @@ export class FirmwareUpdater {
     const { header, bytes } = parsed;
     const total = Math.max(0, bytes.length - BOOT_SIZE);
     const chunkCount = Math.ceil(total / CHUNK_DATA);
-    if (!chunkCount) throw new Error("No firmware payload in this file");
+    if (!chunkCount) throw new Error(t("fw.err.noPayload"));
 
     let dev = null;
     let ackCount = 0;
@@ -383,9 +377,7 @@ export class FirmwareUpdater {
       dev = bootDevice || (await this.waitForBootDevice());
       if (!dev) {
         this.detachAck(dev);
-        throw new Error(
-          'Bootloader device not found after the update-mode command. Unplug and replug the USB cable, then click "Select Bootloader Device" or retry.',
-        );
+        throw new Error(t("fw.err.bootNotFoundLong"));
       }
       this.log(
         `Bootloader found: 0x${dev.productId.toString(16)} (${dev.productName || "HID device"})`,
@@ -438,8 +430,11 @@ export class FirmwareUpdater {
           }
           if (!ok) {
             throw new Error(
-              `No ACK from the bootloader at chunk ${c}/${chunkCount} (address 0x${addr.toString(16)}). ` +
-                "Update failed. The device is still in bootloader mode and can be retried.",
+              t("fw.err.noAck", {
+                i: c + 1,
+                n: chunkCount,
+                addr: addr.toString(16),
+              }),
             );
           }
           ackCount++;

@@ -1,5 +1,6 @@
 import { stateManager } from "./state.js";
 import { icon } from "./icons.js";
+import { t } from "./i18n.js";
 import { MACRO_COUNT, MACRO_MAX_STEPS, MACRO_NAME_MAX } from "./protocol.js";
 
 export const HID_KEY_MAP = {
@@ -155,11 +156,11 @@ export class MacroUI {
             <div class="card-title-group">
               <span class="card-title">
                 ${icon("terminal", 18)}
-                Hardware Macros (${macros.length} / ${MACRO_COUNT})
+                ${t("macro.title", { n: macros.length, max: MACRO_COUNT })}
               </span>
-              <span class="card-desc">On-board flash macro definitions</span>
+              <span class="card-desc">${t("macro.desc")}</span>
             </div>
-            <button class="btn sm accent" id="newMacroBtn">${icon("plus", 14)} New Macro</button>
+            <button class="btn sm accent" id="newMacroBtn">${icon("plus", 14)} ${t("macro.new")}</button>
           </div>
           <div class="card-body scroll-list">
             ${
@@ -172,13 +173,13 @@ export class MacroUI {
                   <div class="button-item-left">
                     <span class="button-item-index">${i + 1}</span>
                     <div class="button-item-details">
-                      <span class="button-item-name">${m.name || `Macro #${i + 1}`}</span>
-                      <span class="button-item-binding">${(m.steps || []).length} Steps</span>
+                      <span class="button-item-name">${m.name || t("macro.defaultName", { n: i + 1 })}</span>
+                      <span class="button-item-binding">${t("macro.steps", { n: (m.steps || []).length })}</span>
                     </div>
                   </div>
                   <div class="flex-gap-xs">
-                    <button class="btn sm ghost edit-macro-btn" data-macro-idx="${i}">Select</button>
-                    <button class="btn sm ghost icon-danger delete-macro-btn" data-macro-idx="${i}" title="Delete Macro">${icon("x", 12, "var(--danger)")}</button>
+                    <button class="btn sm ghost edit-macro-btn" data-macro-idx="${i}">${t("macro.select")}</button>
+                    <button class="btn sm ghost icon-danger delete-macro-btn" data-macro-idx="${i}" title="${t("macro.deleteTitle")}">${icon("x", 12, "var(--danger)")}</button>
                   </div>
                 </div>
               `;
@@ -186,8 +187,8 @@ export class MacroUI {
                     .join("")
                 : `
               <div class="empty-state">
-                <p>No macros created yet.</p>
-                <button class="btn sm accent" id="createFirstMacroBtn">${icon("plus", 14)} Create First Macro</button>
+                <p>${t("macro.none")}</p>
+                <button class="btn sm accent" id="createFirstMacroBtn">${icon("plus", 14)} ${t("macro.createFirst")}</button>
               </div>
             `
             }
@@ -199,14 +200,14 @@ export class MacroUI {
             <div class="card-title-group">
               <span class="card-title">
                 ${icon("play", 18)}
-                ${activeMacro ? activeMacro.name : "Macro Sequence Editor"}
+                ${activeMacro ? activeMacro.name : t("macro.editor")}
               </span>
-              <span class="card-desc">${activeMacro ? "Configure keystrokes, mouse buttons and delay steps" : "Select or create a macro to edit"}</span>
+              <span class="card-desc">${activeMacro ? t("macro.editorDesc") : t("macro.noneSelected")}</span>
             </div>
             ${
               activeMacro
                 ? `
-              <button class="btn sm danger" id="deleteActiveMacroBtn">Delete Macro</button>
+              <button class="btn sm danger" id="deleteActiveMacroBtn">${t("macro.delete")}</button>
             `
                 : ""
             }
@@ -217,27 +218,27 @@ export class MacroUI {
                 ? `
               <div class="setting-row">
                 <div class="setting-info">
-                  <span class="setting-label">Macro Name</span>
-                  <span class="setting-help">Name stored in on-board MCU flash</span>
+                  <span class="setting-label">${t("macro.name")}</span>
+                  <span class="setting-help">${t("macro.nameHelp")}</span>
                 </div>
                 <input type="text" id="macroNameInput" value="${activeMacro.name || ""}" class="name-input" maxlength="${MACRO_NAME_MAX}">
               </div>
 
               <div class="flex-between mt-md">
-                <span class="setting-label">Sequence Steps (${(activeMacro.steps || []).length} / ${MACRO_MAX_STEPS})</span>
+                <span class="setting-label">${t("macro.sequence", { n: (activeMacro.steps || []).length, max: MACRO_MAX_STEPS })}</span>
                 <div class="flex-gap-xs">
                   <button class="btn sm ${this.isRecordingKey ? "danger" : "accent"}" id="recordKeyBtn">
-                    ${this.isRecordingKey ? "Press Key..." : `${icon("plus", 14)} Add Key`}
+                    ${this.isRecordingKey ? t("macro.pressKey") : `${icon("plus", 14)} ${t("macro.addKey")}`}
                   </button>
-                  <select id="clickButtonSelect" title="Mouse button to add" class="select-sm">
-                    <option value="1">Left Click</option>
-                    <option value="2">Right Click</option>
-                    <option value="4">Middle Click</option>
-                    <option value="8">Side Backward</option>
-                    <option value="16">Side Forward</option>
+                  <select id="clickButtonSelect" title="${t("macro.clickSelectTitle")}" class="select-sm">
+                    <option value="1">${t("bind.mouse.1")}</option>
+                    <option value="2">${t("bind.mouse.2")}</option>
+                    <option value="4">${t("bind.mouse.4")}</option>
+                    <option value="8">${t("bind.mouse.8")}</option>
+                    <option value="16">${t("bind.mouse.16")}</option>
                   </select>
-                  <button class="btn sm" id="addClickStepBtn">${icon("plus", 14)} Click</button>
-                  <button class="btn sm" id="addDelayStepBtn">${icon("plus", 14)} Delay</button>
+                  <button class="btn sm" id="addClickStepBtn">${icon("plus", 14)} ${t("macro.click")}</button>
+                  <button class="btn sm" id="addDelayStepBtn">${icon("plus", 14)} ${t("macro.delay")}</button>
                 </div>
               </div>
 
@@ -262,7 +263,7 @@ export class MacroUI {
                         .join("")
                     : `
                   <p class="empty-hint">
-                    Sequence is empty. Click "+ Add Key", "+ Click", or "+ Delay" above.
+                    ${t("macro.emptyHint")}
                   </p>
                 `
                 }
@@ -270,7 +271,7 @@ export class MacroUI {
             `
                 : `
               <div class="empty-state empty-state--lg">
-                <p>Create or select a macro from the left panel to edit sequence steps.</p>
+                <p>${t("macro.noneSelected")}</p>
               </div>
             `
             }
@@ -341,14 +342,7 @@ export class MacroUI {
     if (addClick) {
       addClick.addEventListener("click", () => {
         const hid = clickButton ? parseInt(clickButton.value, 10) : 1;
-        const label =
-          {
-            1: "Left Click",
-            2: "Right Click",
-            4: "Middle Click",
-            8: "Side Backward",
-            16: "Side Forward",
-          }[hid] || "Click";
+        const label = t(`bind.mouse.${hid}`, null, t("bind.mouse.hex", { code: hid.toString(16) }));
         stateManager.updateState((draft) => {
           if (!draft.macros[this.activeMacroIndex]) return;
           const steps = draft.macros[this.activeMacroIndex].steps;
@@ -357,14 +351,14 @@ export class MacroUI {
               {
                 type: "mouse",
                 keyState: 1,
-                value: `${label} Down`,
+                value: t("macro.step.mouseDown", { btn: label }),
                 hidCode: hid,
                 delay: 20,
               },
               {
                 type: "mouse",
                 keyState: 0,
-                value: `${label} Up`,
+                value: t("macro.step.mouseUp", { btn: label }),
                 hidCode: hid,
                 delay: 30,
               },
@@ -385,7 +379,7 @@ export class MacroUI {
             steps.push({
               type: "delay",
               keyState: 0,
-              value: "Delay 50 ms",
+              value: t("macro.step.delay", { ms: 50 }),
               hidCode: 0,
               delay: 50,
             });
@@ -434,28 +428,25 @@ export class MacroUI {
   createMacro() {
     const macros = stateManager.current.macros || [];
     if (macros.length >= MACRO_COUNT) {
-      this.notify(
-        `Maximum limit of ${MACRO_COUNT} hardware macros reached`,
-        "warning",
-      );
+      this.notify(t("macro.limitToast", { n: MACRO_COUNT }), "warning");
       return;
     }
 
     const nextIndex = macros.length;
     const newMacro = {
-      name: `Macro ${nextIndex + 1}`,
+      name: t("macro.defaultName", { n: nextIndex + 1 }),
       steps: [
         {
           type: "key",
           keyState: 1,
-          value: "Key A Down",
+          value: t("macro.step.keyDown", { key: "A" }),
           hidCode: 0x04,
           delay: 20,
         },
         {
           type: "key",
           keyState: 0,
-          value: "Key A Up",
+          value: t("macro.step.keyUp", { key: "A" }),
           hidCode: 0x04,
           delay: 30,
         },
@@ -469,7 +460,7 @@ export class MacroUI {
 
     this.activeMacroIndex = nextIndex;
     this.render();
-    this.notify(`Created ${newMacro.name}`, "info");
+    this.notify(t("macro.created", { name: newMacro.name }), "info");
   }
 
   deleteMacro(index) {
@@ -487,7 +478,7 @@ export class MacroUI {
     }
 
     this.render();
-    this.notify("Macro deleted", "info");
+    this.notify(t("macro.deleted"), "info");
   }
 
   startKeyRecording() {
@@ -510,14 +501,14 @@ export class MacroUI {
             {
               type: "key",
               keyState: 1,
-              value: `Key ${keyInfo.name} Down`,
+              value: t("macro.step.keyDown", { key: keyInfo.name }),
               hidCode: keyInfo.code,
               delay: 20,
             },
             {
               type: "key",
               keyState: 0,
-              value: `Key ${keyInfo.name} Up`,
+              value: t("macro.step.keyUp", { key: keyInfo.name }),
               hidCode: keyInfo.code,
               delay: 30,
             },
@@ -528,7 +519,7 @@ export class MacroUI {
       window.removeEventListener("keydown", keyListener, true);
       this.isRecordingKey = false;
       this.render();
-      this.notify(`Added key: ${keyInfo.name}`, "success");
+      this.notify(t("macro.addedKey", { key: keyInfo.name }), "success");
     };
 
     window.addEventListener("keydown", keyListener, {

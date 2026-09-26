@@ -7,6 +7,7 @@ import {
   dpiToDpiCode,
 } from "./protocol.js";
 import { sensorMaxDpi } from "./sensors.js";
+import { t } from "./i18n.js";
 import { stateManager, formatBindingSummary } from "./state.js";
 
 export class ButtonMappingUI {
@@ -68,11 +69,11 @@ export class ButtonMappingUI {
           <div class="button-item-left">
             <span class="button-item-index">${i + 1}</span>
             <div class="button-item-details">
-              <span class="button-item-name">${btnDef.name}</span>
+              <span class="button-item-name">${t(`btn.name.${i}`, null, btnDef.name)}</span>
               <span class="button-item-binding">${summary}</span>
             </div>
           </div>
-          <button class="btn sm accent rebind-btn" data-index="${i}">Rebind</button>
+          <button class="btn sm accent rebind-btn" data-index="${i}">${t("bind.rebind")}</button>
         </div>
       `;
     }).join("");
@@ -112,7 +113,10 @@ export class ButtonMappingUI {
     this.param2 = currentBind.param2 || 0;
 
     if (this.modalTitle) {
-      this.modalTitle.textContent = `Rebind ${btnDef.name} (Button #${buttonIndex + 1})`;
+      this.modalTitle.textContent = t("bind.rebindTitle", {
+        name: t(`btn.name.${buttonIndex}`, null, btnDef.name),
+        n: buttonIndex + 1,
+      });
     }
 
     this.renderCategories();
@@ -131,58 +135,58 @@ export class ButtonMappingUI {
     const categories = [
       {
         id: KEY_CLASSES.KC_MouseKey,
-        title: "Mouse Button",
-        desc: "Left, right, middle or side clicks",
+        title: t("bind.cat.mouse"),
+        desc: t("bind.cat.mouseDesc"),
       },
       {
         id: KEY_CLASSES.KC_ChangeDPIKey,
-        title: "DPI Switch",
-        desc: "Cycle DPI stages, DPI +, DPI -",
+        title: t("bind.cat.dpi"),
+        desc: t("bind.cat.dpiDesc"),
       },
       {
         id: KEY_CLASSES.KC_MouseFireKey,
-        title: "Rapid Fire",
-        desc: "Burst fire interval & repeat",
+        title: t("bind.cat.fire"),
+        desc: t("bind.cat.fireDesc"),
       },
       {
         id: KEY_CLASSES.KC_ShortcutKey,
-        title: "Multimedia",
-        desc: "Volume, playback, browser keys",
+        title: t("bind.cat.media"),
+        desc: t("bind.cat.mediaDesc"),
       },
       {
         id: KEY_CLASSES.KC_MacroKey,
-        title: "Macro Trigger",
-        desc: "Execute custom macro sequence",
+        title: t("bind.cat.macro"),
+        desc: t("bind.cat.macroDesc"),
       },
       {
         id: KEY_CLASSES.KC_DPILockKey,
-        title: "Sniper / DPI Lock",
-        desc: "Lock custom DPI while held",
+        title: t("bind.cat.sniper"),
+        desc: t("bind.cat.sniperDesc"),
       },
       {
         id: KEY_CLASSES.KC_ChangeReportRateKey,
-        title: "Polling Rate Cycle",
-        desc: "Toggle 125/250/500/1000 Hz",
+        title: t("bind.cat.rate"),
+        desc: t("bind.cat.rateDesc"),
       },
       {
         id: KEY_CLASSES.KC_ChangeConfigKey,
-        title: "Profile Switch",
-        desc: "Toggle between profile 1 & 2",
+        title: t("bind.cat.profile"),
+        desc: t("bind.cat.profileDesc"),
       },
       {
         id: KEY_CLASSES.KC_MouseACPANKey,
-        title: "Tilt Scroll",
-        desc: "Horizontal tilt-wheel scroll",
+        title: t("bind.cat.tilt"),
+        desc: t("bind.cat.tiltDesc"),
       },
       {
         id: KEY_CLASSES.KC_ScrollUpDownKey,
-        title: "Scroll Wheel",
-        desc: "Scroll up or down",
+        title: t("bind.cat.wheel"),
+        desc: t("bind.cat.wheelDesc"),
       },
       {
         id: KEY_CLASSES.KC_CloseKey,
-        title: "Disabled",
-        desc: "Disable button output",
+        title: t("bind.cat.disabled"),
+        desc: t("bind.cat.disabledDesc"),
       },
     ];
 
@@ -260,24 +264,24 @@ export class ButtonMappingUI {
     switch (this.selectedClass) {
       case KEY_CLASSES.KC_MouseKey:
         html = `
-          <label class="setting-label">Select Mouse Action</label>
+          <label class="setting-label">${t("bind.opt.selectAction")}</label>
           <select id="subMouseMask">
-            <option value="1" ${this.param1 === 1 ? "selected" : ""}>Left Click (Primary)</option>
-            <option value="2" ${this.param1 === 2 ? "selected" : ""}>Right Click (Secondary)</option>
-            <option value="4" ${this.param1 === 4 ? "selected" : ""}>Middle Click (Wheel Click)</option>
-            <option value="8" ${this.param1 === 8 ? "selected" : ""}>Side Backward (Browser Back)</option>
-            <option value="16" ${this.param1 === 16 ? "selected" : ""}>Side Forward (Browser Forward)</option>
+            <option value="1" ${this.param1 === 1 ? "selected" : ""}>${t("bind.opt.mouse.1")}</option>
+            <option value="2" ${this.param1 === 2 ? "selected" : ""}>${t("bind.opt.mouse.2")}</option>
+            <option value="4" ${this.param1 === 4 ? "selected" : ""}>${t("bind.opt.mouse.4")}</option>
+            <option value="8" ${this.param1 === 8 ? "selected" : ""}>${t("bind.opt.mouse.8")}</option>
+            <option value="16" ${this.param1 === 16 ? "selected" : ""}>${t("bind.opt.mouse.16")}</option>
           </select>
         `;
         break;
 
       case KEY_CLASSES.KC_ChangeDPIKey:
         html = `
-          <label class="setting-label">DPI Switch Behavior</label>
+          <label class="setting-label">${t("bind.opt.dpiBehavior")}</label>
           <select id="subDpiMode">
-            <option value="1" ${this.param1 === 1 ? "selected" : ""}>DPI Loop (Cycle)</option>
-            <option value="2" ${this.param1 === 2 ? "selected" : ""}>DPI + (Increase)</option>
-            <option value="3" ${this.param1 === 3 ? "selected" : ""}>DPI - (Decrease)</option>
+            <option value="1" ${this.param1 === 1 ? "selected" : ""}>${t("bind.dpi.1")}</option>
+            <option value="2" ${this.param1 === 2 ? "selected" : ""}>${t("bind.dpi.2")}</option>
+            <option value="3" ${this.param1 === 3 ? "selected" : ""}>${t("bind.dpi.3")}</option>
           </select>
         `;
         break;
@@ -286,8 +290,8 @@ export class ButtonMappingUI {
         html = `
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-label">Fire Interval (ms)</span>
-              <span class="setting-help">Delay between clicks in burst (1 to 255 ms)</span>
+              <span class="setting-label">${t("bind.opt.fireInterval")}</span>
+              <span class="setting-help">${t("bind.opt.fireIntervalHelp")}</span>
             </div>
             <div class="num-input-wrap">
               <input type="number" id="subFireInterval" min="1" max="255" value="${this.param1 || 20}">
@@ -296,12 +300,12 @@ export class ButtonMappingUI {
           </div>
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-label">Repeat Count</span>
-              <span class="setting-help">0 fires while the button is held. 1 to 255 fires a fixed count</span>
+              <span class="setting-label">${t("bind.opt.repeatCount")}</span>
+              <span class="setting-help">${t("bind.opt.repeatHelp")}</span>
             </div>
             <div class="num-input-wrap">
               <input type="number" id="subFireCount" min="0" max="255" value="${this.param2}">
-              <span class="unit">shots</span>
+              <span class="unit">${t("bind.opt.shots")}</span>
             </div>
           </div>
         `;
@@ -309,11 +313,11 @@ export class ButtonMappingUI {
 
       case KEY_CLASSES.KC_ShortcutKey:
         html = `
-          <label class="setting-label">Select Multimedia / System Function</label>
+          <label class="setting-label">${t("bind.opt.selectMedia")}</label>
           <select id="subMediaKey">
             ${MULTIMEDIA_KEYS.map(
               (m) => `
-              <option value="${m.code}" ${this.param1 === m.code ? "selected" : ""}>${m.name}</option>
+              <option value="${m.code}" ${this.param1 === m.code ? "selected" : ""}>${t(`media.${m.k}`, null, m.name)}</option>
             `,
             ).join("")}
           </select>
@@ -323,19 +327,19 @@ export class ButtonMappingUI {
       case KEY_CLASSES.KC_MacroKey: {
         const macros = stateManager.current.macros || [];
         if (macros.length === 0) {
-          html = `<p class="setting-help">No macros created yet. Create one in the Macro Manager tab.</p>`;
+          html = `<p class="setting-help">${t("bind.opt.noMacros")}</p>`;
           break;
         }
         html = `
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-label">Macro Slot</span>
-              <span class="setting-help">Select one of your macros (up to ${MACRO_COUNT})</span>
+              <span class="setting-label">${t("bind.opt.macroSlot")}</span>
+              <span class="setting-help">${t("bind.opt.macroSlotHelp", { n: MACRO_COUNT })}</span>
             </div>
             <select id="subMacroIndex">
               ${macros
                 .map((m, i) => {
-                  const label = m ? `${i + 1}: ${m.name}` : `Macro #${i + 1}`;
+                  const label = m ? `${i + 1}: ${m.name}` : t("bind.opt.macroNum", { n: i + 1 });
                   return `<option value="${i}" ${this.param1 === i ? "selected" : ""}>${label}</option>`;
                 })
                 .join("")}
@@ -343,15 +347,15 @@ export class ButtonMappingUI {
           </div>
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-label">Execution Mode</span>
+              <span class="setting-label">${t("bind.opt.execMode")}</span>
             </div>
             <select id="subMacroLoop">
-              <option value="0" ${this.param2 === 0 ? "selected" : ""}>Play Once</option>
-              <option value="254" ${this.param2 === 254 ? "selected" : ""}>Loop While Held</option>
-              <option value="255" ${this.param2 === 255 ? "selected" : ""}>Loop Until Key Pressed</option>
-              <option value="2" ${this.param2 === 2 ? "selected" : ""}>Repeat 2x</option>
-              <option value="3" ${this.param2 === 3 ? "selected" : ""}>Repeat 3x</option>
-              <option value="5" ${this.param2 === 5 ? "selected" : ""}>Repeat 5x</option>
+              <option value="0" ${this.param2 === 0 ? "selected" : ""}>${t("bind.opt.playOnce")}</option>
+              <option value="254" ${this.param2 === 254 ? "selected" : ""}>${t("bind.opt.loopHeld")}</option>
+              <option value="255" ${this.param2 === 255 ? "selected" : ""}>${t("bind.opt.loopUntil")}</option>
+              <option value="2" ${this.param2 === 2 ? "selected" : ""}>${t("bind.opt.repeatN", { n: 2 })}</option>
+              <option value="3" ${this.param2 === 3 ? "selected" : ""}>${t("bind.opt.repeatN", { n: 3 })}</option>
+              <option value="5" ${this.param2 === 5 ? "selected" : ""}>${t("bind.opt.repeatN", { n: 5 })}</option>
             </select>
           </div>
         `;
@@ -364,8 +368,8 @@ export class ButtonMappingUI {
         html = `
           <div class="setting-row">
             <div class="setting-info">
-              <span class="setting-label">Sniper DPI Value</span>
-              <span class="setting-help">Sensor switches to this DPI while holding button</span>
+              <span class="setting-label">${t("bind.opt.sniperDpi")}</span>
+              <span class="setting-help">${t("bind.opt.sniperHelp")}</span>
             </div>
             <div class="num-input-wrap">
               <input type="number" id="subSniperDpiNum" min="50" max="${maxDpi}" step="50" value="${liveDpi}">
@@ -379,20 +383,20 @@ export class ButtonMappingUI {
 
       case KEY_CLASSES.KC_MouseACPANKey:
         html = `
-          <label class="setting-label">Tilt Scroll Direction</label>
+          <label class="setting-label">${t("bind.opt.tiltLabel")}</label>
           <select id="subTiltMode">
-            <option value="1" ${this.param1 === 1 ? "selected" : ""}>Scroll Left</option>
-            <option value="2" ${this.param1 === 2 ? "selected" : ""}>Scroll Right</option>
+            <option value="1" ${this.param1 === 1 ? "selected" : ""}>${t("bind.scroll.1")}</option>
+            <option value="2" ${this.param1 === 2 ? "selected" : ""}>${t("bind.scroll.2")}</option>
           </select>
         `;
         break;
 
       case KEY_CLASSES.KC_ScrollUpDownKey:
         html = `
-          <label class="setting-label">Scroll Direction</label>
+          <label class="setting-label">${t("bind.opt.scrollLabel")}</label>
           <select id="subScrollMode">
-            <option value="1" ${this.param1 === 1 ? "selected" : ""}>Scroll Up</option>
-            <option value="2" ${this.param1 === 2 ? "selected" : ""}>Scroll Down</option>
+            <option value="1" ${this.param1 === 1 ? "selected" : ""}>${t("bind.opt.scrollUp")}</option>
+            <option value="2" ${this.param1 === 2 ? "selected" : ""}>${t("bind.opt.scrollDown")}</option>
           </select>
         `;
         break;
@@ -400,7 +404,7 @@ export class ButtonMappingUI {
       case KEY_CLASSES.KC_ChangeReportRateKey:
       case KEY_CLASSES.KC_ChangeConfigKey:
       case KEY_CLASSES.KC_CloseKey:
-        html = `<p class="setting-help">This action needs no additional configuration.</p>`;
+        html = `<p class="setting-help">${t("bind.opt.noConfig")}</p>`;
         break;
     }
 
