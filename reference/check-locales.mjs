@@ -89,6 +89,94 @@ for (const k of unreferenced) {
   warn(`key never referenced in sources: ${k}`);
 }
 
+// 5. interpolation audit: every t("key", { params }) call must provide all
+// {placeholders} the dictionary value needs, and keys applied via
+// data-i18n (no interpolation) must not contain placeholders.
+const placeholdersOf = (k) => [...(en[k] || "").matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+
+// Balanced-brace extraction of the params object after t("key", so that
+// template literals (${...}) and nested calls inside param values don't
+// confuse the scan.
+function extractParamNames(src, objStart) {
+  const provided = new Set();
+  let depth = 0;
+  let end = -1;
+  for (let j = objStart; j < src.length; j++) {
+    const ch = src[j];
+    if (ch === "'" || ch === '"' || ch === "`") {
+      const quote = ch;
+      j++;
+      for (; j < src.length; j++) {
+        if (src[j] === "\\") {
+          j++;
+        } else if (quote === "`" && src[j] === "$" && src[j + 1] === "{") {
+          let inner = 0;
+          j += 1;
+          for (; j < src.length; j++) {
+            if (src[j] === "{") inner++;
+            else if (src[j] === "}") {
+              inner--;
+              if (inner === 0) break;
+            }
+          }
+        } else if (src[j] === quote) break;
+      }
+      continue;
+    }
+    if (ch === "{" || ch === "(" || ch === "[") depth++;
+    else if (ch === "}" || ch === ")" || ch === "]") {
+      depth--;
+      if (depth === 0) {
+        end = j;
+        break;
+      }
+    }
+  }
+  if (end === -1) return provided;
+  const body = src.slice(objStart + 1, end);
+  let d = 0;
+  let cur = "";
+  const parts = [];
+  for (const ch of body) {
+    if (ch === "{" || ch === "(" || ch === "[") d++;
+    else if (ch === "}" || ch === ")" || ch === "]") d--;
+    if (d === 0 && ch === ",") {
+      parts.push(cur);
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.trim()) parts.push(cur);
+  for (const part of parts) {
+    const pm = part.match(/^\s*(\w+)\s*:/);
+    if (pm) provided.add(pm[1]);
+  }
+  return provided;
+}
+
+for (const file of jsFiles) {
+  const src = fs.readFileSync(file, "utf8");
+  const re = /\bt\(\s*["']([^"'`]+)["']\s*,\s*\{/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const objStart = m.index + m[0].length - 1;
+    const provided = extractParamNames(src, objStart);
+    for (const ph of placeholdersOf(m[1])) {
+      if (!provided.has(ph)) {
+        fail(
+          `t("${m[1]}") is missing param {${ph}} (${path.relative(root, file)})`,
+        );
+      }
+    }
+  }
+}
+for (const k of staticKeys) {
+  if (html.includes(`data-i18n="${k}"`) && placeholdersOf(k).length > 0) {
+    fail(`data-i18n key has placeholders but cannot interpolate: ${k}`);
+  }
+}
+
 console.log(
   `static refs: ${staticKeys.size}, dynamic prefixes: ${dynamicPrefixes.size}, unreferenced keys: ${unreferenced.length}`,
 );

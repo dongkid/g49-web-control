@@ -210,7 +210,6 @@ async function sendBootReport(dev, payload) {
       15,
     ]),
   ];
-  let lastErr = null;
   for (const len of candidates) {
     if (len < payload.length) continue;
     try {
@@ -220,7 +219,6 @@ async function sendBootReport(dev, payload) {
       );
       return;
     } catch (err) {
-      lastErr = err;
       const nums = String((err && err.message) || "").match(/\d+/g);
       if (nums && nums.length) {
         const expect = parseInt(nums[nums.length - 1], 10);

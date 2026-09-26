@@ -275,11 +275,12 @@ export class DpiUI {
       num.addEventListener("change", () => {
         const stage = parseInt(num.getAttribute("data-stage"), 10);
         let val = parseInt(num.value, 10) || 800;
-        val = Math.max(
-          MIN_DPI,
-          Math.min(maxDpi, Math.round(val / DPI_STEP) * DPI_STEP),
+        val = snapDpi(
+          Math.max(
+            MIN_DPI,
+            Math.min(sensorMaxDpi(), Math.round(val / DPI_STEP) * DPI_STEP),
+          ),
         );
-        val = snapDpi(val);
         num.value = val;
         const range = this.container.querySelector(
           `.dpi-range-input[data-stage="${stage}"]`,

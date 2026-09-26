@@ -1,7 +1,7 @@
 import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
-import { SENSORS, SENSOR_IDS, getActiveSensor, getActiveSensorId, setActiveSensorId } from "./sensors.js";
+import { SENSORS, getActiveSensor, getActiveSensorId, setActiveSensorId } from "./sensors.js";
 import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
