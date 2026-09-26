@@ -84,20 +84,21 @@ class Transport {
   }
 
   async getPairedDevice() {
-    if (!navigator.hid) return null;
+    const candidates = await this.getPairedCandidates();
+    // Keep the historical single-device behaviour for callers that just want
+    // "the" device; connect() handles multi-device disambiguation itself.
+    return candidates[0] || null;
+  }
+
+  async getPairedCandidates() {
+    if (!navigator.hid) return [];
     const devices = await navigator.hid.getDevices();
-    const candidates = devices.filter(
+    return devices.filter(
       (d) =>
         d.vendorId === USB_VID &&
         !!DEVICE_MODELS[d.productId] &&
         this.isVendorInterface(d),
     );
-    candidates.sort(
-      (a, b) =>
-        Number(DEVICE_MODELS[b.productId].mode === "Wired USB-C") -
-        Number(DEVICE_MODELS[a.productId].mode === "Wired USB-C"),
-    );
-    return candidates[0] || null;
   }
 
   async connect(interactive = false) {
@@ -107,17 +108,26 @@ class Transport {
       );
     }
 
-    let dev = await this.getPairedDevice();
-    if (!dev && interactive) {
-      const filters = [
-        { vendorId: USB_VID, usagePage: USAGE_PAGE_FILTER },
-        ...Object.keys(DEVICE_MODELS).map((pid) => ({
-          vendorId: USB_VID,
-          productId: Number(pid),
-          usagePage: USAGE_PAGE_FILTER,
-        })),
-      ];
+    const filters = [
+      { vendorId: USB_VID, usagePage: USAGE_PAGE_FILTER },
+      ...Object.keys(DEVICE_MODELS).map((pid) => ({
+        vendorId: USB_VID,
+        productId: Number(pid),
+        usagePage: USAGE_PAGE_FILTER,
+      })),
+    ];
 
+    let dev = null;
+    const candidates = await this.getPairedCandidates();
+    if (candidates.length === 1) {
+      dev = candidates[0];
+    } else if (candidates.length > 1) {
+      // Several supported devices share these USB IDs (G49 / M916 Pro 1K);
+      // never guess between them — make the user pick one explicitly.
+      const selected = await navigator.hid.requestDevice({ filters });
+      if (!selected || selected.length === 0) return false;
+      dev = selected[0];
+    } else if (interactive) {
       const selected = await navigator.hid.requestDevice({ filters });
       if (selected && selected.length > 0) {
         dev = selected[0];

@@ -45,6 +45,7 @@ export const en = {
   "overlay.readingTitle": "Reading device configuration...",
   "overlay.readingMsg":
     "Reading settings and macros from the mouse flash memory. This normally takes a few seconds.",
+  "overlay.errorTitle": "Connection Failed",
 
   // ---- toasts / global messages (app.js) ----
   "toast.notSupported":
@@ -56,6 +57,10 @@ export const en = {
     "Reading configuration from mouse flash memory...",
   "toast.readOk": "Flash configuration loaded successfully!",
   "toast.readFail": "Failed to read from mouse: {err}",
+  "toast.readFailPartial":
+    "Connected, but reading flash failed: {err}",
+  "toast.unsupportedDevice":
+    "The selected device is not a supported Redragon mouse (identity check failed). Disconnected.",
   "toast.connectFail": "Connection failed: {err}",
   "toast.writing": "Writing settings to mouse flash memory...",
   "toast.writeOk": "Settings saved to mouse hardware!",

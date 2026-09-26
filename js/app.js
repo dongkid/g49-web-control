@@ -9,7 +9,12 @@ import { DongleUI } from "./ui-dongle.js";
 import { MacroUI } from "./ui-macros.js";
 import { ShortcutsUI } from "./ui-shortcuts.js";
 import { FirmwareUI } from "./ui-firmware.js";
-import { codeToPollingRate, getActiveSensor } from "./protocol.js";
+import {
+  codeToPollingRate,
+  getActiveSensor,
+  getActiveSensorId,
+  SENSOR_IDS,
+} from "./protocol.js";
 import {
   t,
   getLocale,
@@ -54,6 +59,9 @@ class App {
 
     this.appWrapper = document.getElementById("appWrapper");
     this.disconnectOverlay = document.getElementById("disconnectOverlay");
+    this.disconnectCard = this.disconnectOverlay?.querySelector(
+      ".disconnect-card",
+    );
     this.disconnectTitle = document.getElementById("disconnectTitle");
     this.disconnectMsg = document.getElementById("disconnectMsg");
     this.notifyContainer = document.getElementById("notifyContainer");
@@ -362,12 +370,27 @@ class App {
         this.onDisconnected();
       }
     } catch (err) {
-      this.notify(t("toast.connectFail", { err: err.message }), "error");
       this.onDisconnected();
+      this.showOverlay(
+        t("overlay.errorTitle"),
+        t("toast.connectFail", { err: err.message }),
+        { error: true },
+      );
     } finally {
       this.isWorking = false;
       this.syncButtonStates();
     }
+  }
+
+  // Post-read identity: the sensor profile (auto-detected or manual) plus
+  // the dongle's rate capability resolve to exactly one model, even though
+  // the 1K PIDs are shared between the G49 and the M916 Pro 1K.
+  resolvedModelName() {
+    if (getActiveSensorId() === SENSOR_IDS.PAW3311) return "Redragon G49";
+    if ((transport.getDeviceInfo()?.maxRate ?? 1000) >= 4000) {
+      return "Redragon M916 Pro 4K";
+    }
+    return "Redragon M916 Pro 1K";
   }
 
   async handleConnectSuccess() {
@@ -379,14 +402,27 @@ class App {
       { busy: true },
     );
 
+    // Reject non-mouse devices that pass the WebHID usage-page filter
+    // (e.g. Redragon keyboards) before reading any configuration. The error
+    // is shown inside the overlay itself so the fuzzy backdrop can't hide it.
+    try {
+      await MouseApi.verifySupportedMouse();
+    } catch (_) {
+      await transport.disconnect();
+      this.onDisconnected();
+      this.showOverlay(
+        t("overlay.errorTitle"),
+        t("toast.unsupportedDevice"),
+        { error: true },
+      );
+      return;
+    }
+
     try {
       await this.handleRead(true);
       this.onConnected();
       this.notify(
-        t("toast.connected", {
-          name:
-            transport.getDeviceInfo()?.name || "Redragon mouse",
-        }),
+        t("toast.connected", { name: this.resolvedModelName() }),
         "success",
       );
       this.suppressAutoReload();
@@ -398,7 +434,7 @@ class App {
     } catch (err) {
       this.onConnected();
       this.notify(
-        `Connected, but reading flash failed: ${err.message}`,
+        t("toast.readFailPartial", { err: err.message }),
         "warning",
       );
     }
@@ -440,10 +476,11 @@ class App {
     this.syncStateToUI(stateManager.current, stateManager.hasChanges);
   }
 
-  showOverlay(title, message, { busy = false } = {}) {
-    this.lastOverlay = { title, message, opts: { busy } };
+  showOverlay(title, message, { busy = false, error = false } = {}) {
+    this.lastOverlay = { title, message, opts: { busy, error } };
     if (this.disconnectTitle) this.disconnectTitle.textContent = title;
     if (this.disconnectMsg) this.disconnectMsg.textContent = message;
+    this.disconnectCard?.classList.toggle("error", error);
     if (this.disconnectOverlay) {
       this.disconnectOverlay.classList.add("visible");
     }
@@ -453,6 +490,7 @@ class App {
 
   hideOverlay() {
     this.lastOverlay = null;
+    this.disconnectCard?.classList.remove("error");
     if (this.disconnectOverlay) {
       this.disconnectOverlay.classList.remove("visible");
     }
@@ -497,7 +535,7 @@ class App {
     const devInfo = transport.getDeviceInfo();
     if (devInfo) {
       this.deviceBadge.style.display = "inline-flex";
-      this.deviceBadge.textContent = `${devInfo.name} (${devInfo.mode})`;
+      this.deviceBadge.textContent = `${this.resolvedModelName()} · ${getActiveSensor().label} (${devInfo.mode})`;
     }
 
     if (state.version) {

@@ -43,6 +43,7 @@ export const zh = {
   "overlay.readingTitle": "正在读取设备配置...",
   "overlay.readingMsg":
     "正在从鼠标闪存读取设置和宏，通常需要几秒钟。",
+  "overlay.errorTitle": "连接失败",
 
   // ---- toasts / global messages ----
   "toast.notSupported":
@@ -53,6 +54,9 @@ export const zh = {
   "toast.reading": "正在从鼠标闪存读取配置...",
   "toast.readOk": "配置读取成功！",
   "toast.readFail": "从鼠标读取失败：{err}",
+  "toast.readFailPartial": "已连接，但读取闪存失败：{err}",
+  "toast.unsupportedDevice":
+    "所选设备不是受支持的红龙鼠标（设备身份校验未通过），已断开连接。",
   "toast.connectFail": "连接失败：{err}",
   "toast.writing": "正在将设置写入鼠标闪存...",
   "toast.writeOk": "设置已保存到鼠标硬件！",

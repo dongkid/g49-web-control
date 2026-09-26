@@ -321,3 +321,13 @@ header {
   margin-bottom: var(--space-xl);
   line-height: 1.6;
 }
+
+/* Error state: connection/validation failures shown inside the overlay */
+.disconnect-card.error {
+  border-color: var(--danger);
+}
+
+.disconnect-card.error .disconnect-icon,
+.disconnect-card.error h2 {
+  color: var(--danger);
+}

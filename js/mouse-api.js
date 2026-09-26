@@ -184,6 +184,31 @@ export class MouseApi {
     }
   }
 
+  // Lightweight identity check run right after connect: a genuine
+  // M916-family mouse answers flash reads with valid checksums and in-range
+  // values, while an unrelated Redragon device (e.g. a keyboard sharing the
+  // vendor usage page) does not. Throws when the device cannot be verified.
+  static async verifySupportedMouse() {
+    const rate = await this.readFlashChunk(FlashAddr.ReportRate, 2);
+    const dpi = await this.readFlashChunk(FlashAddr.MaxDPI, 2);
+    const lod = await this.readFlashChunk(FlashAddr.SilenceHeight, 2);
+
+    const recordOk = (chunk, min, max) =>
+      !!chunk &&
+      chunk.length >= 2 &&
+      chunk[0] >= min &&
+      chunk[0] <= max &&
+      chunk[1] === ((0x55 - chunk[0]) & 0xff);
+
+    const rateOk =
+      !!rate && rate.length >= 2 && [1, 2, 4, 8, 16, 32].includes(rate[0]) &&
+      rate[1] === ((0x55 - rate[0]) & 0xff);
+
+    if (!rateOk || !recordOk(dpi, 1, 8) || !recordOk(lod, 0, 1)) {
+      throw new Error(t("toast.unsupportedDevice"));
+    }
+  }
+
   static async readCidMid() {
     try {
       const resp = await transport.exchange(
