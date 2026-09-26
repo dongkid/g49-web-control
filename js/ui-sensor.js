@@ -171,6 +171,9 @@ export class SensorUI {
               </div>
             </div>
             <div class="card-body">
+              ${
+                caps.powerSaving !== false
+                  ? `
               <div class="setting-row">
                 <div class="setting-info">
                   <span class="setting-label">${t("sensor.eco")}</span>
@@ -181,6 +184,9 @@ export class SensorUI {
                   <span class="switch-slider"></span>
                 </label>
               </div>
+              `
+                  : ""
+              }
 
               <div class="setting-row">
                 <div class="setting-info">

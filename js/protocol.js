@@ -1,5 +1,6 @@
 import {
   SENSOR_IDS,
+  getActiveSensor,
   getActiveSensorId,
   encodeDpiPaw3311,
   decodeDpiPaw3311,
@@ -143,6 +144,23 @@ export const PERF_2BYTE = {
   sensorSleepTime: 0x0058,
   customSleepEnable: 0x005a,
 };
+
+// Perf register resolution per active sensor: per-sensor overrides first
+// (addresses captured from the official driver), then registers whose
+// semantics are unverified on that sensor (skipped entirely), then the
+// canonical 3395 layout.
+export function perfRegisterAddress(key) {
+  const sensor = getActiveSensor();
+  if (sensor) {
+    if (sensor.perfOverrides && sensor.perfOverrides[key] !== undefined) {
+      return sensor.perfOverrides[key];
+    }
+    if (sensor.perfSkip && sensor.perfSkip.includes(key)) {
+      return null;
+    }
+  }
+  return PERF_2BYTE[key];
+}
 
 export const POLLING_RATES = [
   { rate: 125, code: 8, label: "125 Hz" },

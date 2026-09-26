@@ -45,7 +45,24 @@ export const SENSORS = {
       rippleControl: true,
       linearCorrection: true,
       surfaceCalibration: false,
+      // Write-tested on live hardware: 0x56 rejects writes on this firmware
+      // (stays 0xFF), so the ECO toggle has no backing register and is hidden.
+      powerSaving: false,
     },
+    // Register addresses captured from the official G49 driver: the 3311
+    // firmware keeps some perf toggles in the 0xA0+ region instead of the
+    // 3395 layout. Registers in perfSkip are never written: motion sync and
+    // allLedOffTime are firmware constants, and 0x56 (ECO) rejects writes
+    // (verified by a live write/read-back test).
+    perfOverrides: {
+      linearCorrection: 0x00af,
+      rippleControl: 0x00b1,
+    },
+    perfSkip: [
+      "motionSync",
+      "allLedOffTime",
+      "powerSaving",
+    ],
   },
 };
 

@@ -13,6 +13,7 @@ import {
   SHORTCUT_COUNT,
   SHORTCUT_MAX_KEYS,
   PERF_2BYTE,
+  perfRegisterAddress,
   codeToPollingRate,
   pollingRateToCode,
   encodeDpiRecord,
@@ -795,17 +796,13 @@ export class MouseApi {
       }
     }
 
-    const perfAddr = {
-      keyDebounce: PERF_2BYTE.keyDebounce,
-      motionSync: PERF_2BYTE.motionSync,
-      linearCorrection: PERF_2BYTE.linearCorrection,
-      rippleControl: PERF_2BYTE.rippleControl,
-      powerSaving: PERF_2BYTE.powerSaving,
-      sensorSleepTime: PERF_2BYTE.sensorSleepTime,
-      customSleepEnable: PERF_2BYTE.customSleepEnable,
-    };
     const perfRaw = {};
-    for (const [key, addr] of Object.entries(perfAddr)) {
+    for (const key of Object.keys(PERF_2BYTE)) {
+      const addr = perfRegisterAddress(key);
+      if (addr === null) {
+        perfRaw[key] = null;
+        continue;
+      }
       const chunk = await this.readFlashChunk(addr, 2);
       perfRaw[key] = chunk ? chunk[0] : 0;
     }
@@ -998,12 +995,11 @@ export class MouseApi {
     };
     const sp = state.perf || {};
     const pp = (prev && prev.perf) || null;
-    for (const [key, addr] of Object.entries(PERF_2BYTE)) {
-      // Motion sync is a 3395-only feature; on the 3311 firmware the register
-      // holds a firmware constant and must never be rewritten as 0/1.
-      if (key === "motionSync" && getActiveSensorId() === SENSOR_IDS.PAW3311) {
-        continue;
-      }
+    for (const key of Object.keys(PERF_2BYTE)) {
+      const addr = perfRegisterAddress(key);
+      // Registers unverified on the active sensor (null) are never written,
+      // e.g. motion sync / ECO / sleep on the 3311 firmware.
+      if (addr === null) continue;
       await writeIfChanged(
         rec2(perfVal(sp, key)),
         pp ? rec2(perfVal(pp, key)) : null,
