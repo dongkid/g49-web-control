@@ -1,32 +1,56 @@
-# M916 Pro UI
+# M916 Pro / G49 UI
 
-WebHID control center for the Redragon M916 Pro gaming mouse (1K and 4K)
+WebHID control center for the **Redragon G49 base** and the **Redragon M916 Pro** gaming mouse (1K and 4K).
+
+**English** | [中文](README.zh-CN.md)
 
 <p align="center">
   <img src="screenshots/screenshot1.png" width="49%">
   <img src="screenshots/screenshot2.png" width="49%">
 </p>
 
+## Supported models
+
+| Model | Sensor | USB ID (VID:PID) | Board MID |
+| --- | --- | --- | --- |
+| Redragon G49 base | PixArt **PAW3311** | `3554:F55D` (2.4G dongle) / `3554:F5D5` (alt dongle) / `3554:F55E` (wired) | 4 |
+| M916 Pro 1K | PixArt **PAW3395** | same 1K PIDs as above | 5 |
+| M916 Pro 4K | PixArt **PAW3395** | `3554:F54C` / `3554:F54F` / `3554:F55F` / `3554:F54E` | 6 |
+
+Both G49 and M916 Pro 1K share the same 1K USB IDs but use different sensors and board identities. The connected model is detected automatically (live MID read → PID table → flash-encoding evidence, in that order) and can also be switched manually via the Sensor panel.
+
 ## Features
 
 - **Button mapping:** Rebind any of the six hardware buttons to mouse actions, DPI switching, rapid fire, multimedia keys, shortcuts or macros
-- **DPI & polling:** 1-8 DPI stages (50-26,000 DPI) with per-stage colors, live stage switching, polling rate from 125 Hz to 4 kHz
-- **Sensor tuning:** Motion sync, ripple control, angle snapping, PAW3395 surface calibration (MTK)
+- **DPI & polling:** 1-8 DPI stages, per-stage colors, live stage switching, polling rate from 125 Hz to 4 kHz
+  - PAW3395 (M916 Pro): linear register codes, 50-26,000 DPI
+  - PAW3311 (G49): quantized register table 50-10,000 DPI with x2/x4 scaling up to 24,000 DPI, matching the official G49 driver's `driver_sensor.h`
+- **Sensor tuning:** Ripple control and angle snapping on both sensors; motion sync and MTK surface calibration on PAW3395 models only (hidden on the G49, where the registers are firmware placeholders)
 - **Power & RF:** Long-range mode, power saving, sleep timers
 - **Macros & shortcuts:** Key-combo and multi-step macro recording stored on on-board flash
 - **Profiles:** 4 on-device profiles, `.json` export/import, factory reset
-- **Firmware:** USB DFU updates for mouse and receiver with header validation and a dry-run trace
+- **Firmware:** USB DFU updates for mouse and receiver with header validation and a dry-run trace; accepts G49 (MID 4) packages
 - **Zero install:** Static HTML/JS/CSS, no build step
 
-## Web
+## G49-specific notes
 
-Use directly in any Chromium-based browser (Chrome, Edge, Brave):
+This is a fork of [vzpyr/m916proui](https://github.com/vzpyr/m916proui) adapted for the Redragon G49 base. The G49 shares the M916 Pro 1K's USB IDs but ships with a PAW3311 sensor and different register semantics — upstream's 3395-linear codec mis-decoded its DPI stages and perf toggles. Changes in this fork:
 
-[vzpyr.github.io/m916proui](https://vzpyr.github.io/m916proui)
+- Sensor-aware DPI codec built from the official G49 driver's `SENSOR_3311_DPI_*` table (verified byte-for-byte against a live flash dump)
+- Perf booleans on the 3311 firmware are read strictly (`1` = on); factory values like `0x80`/`0xFF` are preserved instead of being rewritten as 0/1, and the unsupported motion-sync register is never touched on commit
+- Pairing and firmware matching prefer the live-read board identity (MID 4 for the G49)
+- Known quirk: on the 1K RF dongle the version / CID-MID queries only ACK-echo, so the firmware badge may stay blank over wireless (matches upstream findings)
 
-## Permissions
+## Getting started
 
-Allow the WebHID device prompt when clicking Connect. On Linux, create a udev rule so the browser can open the HID interface (WebHID uses hidraw), then replug the device:
+Serve over localhost (WebHID requires a secure context) and open in Chrome / Edge / Brave:
+
+```bash
+python -m http.server 8080
+# open http://localhost:8080
+```
+
+Allow the WebHID device prompt when clicking Connect and pick the receiver. On Linux, create a udev rule so the browser can open the HID interface (WebHID uses hidraw), then replug the device:
 
 ```bash
 sudo tee /etc/udev/rules.d/99-m916-pro.rules <<'EOF'
@@ -35,10 +59,16 @@ EOF
 sudo udevadm control --reload-rules
 ```
 
-## References
+## Maintenance
 
-- [SPEC.md](SPEC.md) - wire protocol and on-board flash layout, reverse-engineered from the official Windows driver
+- `node reference/check-locales.mjs` — dictionary integrity check
+- `node reference/verify-g49-codec.mjs` — DPI codec regression against a real G49 flash dump (`reference/g49-flash-dump.bin`)
+- [SPEC.md](SPEC.md) — wire protocol and on-board flash layout, reverse-engineered from the official Windows driver
 
 ## License
 
 MIT
+
+## Credits
+
+Fork of [vzpyr/m916proui](https://github.com/vzpyr/m916proui) (MIT). G49 adaptation based on the official G49 driver's `driver_sensor.h`, `Config.ini` and live flash captures; protocol reverse engineering credits go to the upstream author. 

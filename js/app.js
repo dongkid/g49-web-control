@@ -618,7 +618,7 @@ class App {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `M916_Pro_UI_Profile_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `M916_Pro_G49_UI_Profile_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       this.notify(t("toast.exportOk"), "success");

@@ -221,7 +221,7 @@ class StateManager {
   exportProfileJSON() {
     return JSON.stringify(
       {
-        appName: "M916 Pro UI",
+        appName: "M916 Pro / G49 UI",
         exportedAt: new Date().toISOString(),
         profile: this.sanitizeForCompare(this.current),
       },
