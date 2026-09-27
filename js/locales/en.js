@@ -249,6 +249,15 @@ export const en = {
   "sensor.motionSync": "Motion Sync",
   "sensor.motionSyncHelp":
     "Synchronizes sensor frames with USB polling for 1:1 input linearity",
+  "sensor.modeSelect": "Mode Select",
+  "sensor.modeSelectHelp":
+    "Sensor power mode: LP favors battery life, HP favors tracking performance",
+  "sensor.firepower": "Peak Performance",
+  "sensor.firepowerHelp":
+    "Runs the mouse at peak performance for the selected duration, then reverts automatically",
+  "sensor.firepowerTimer": "Peak Performance Timer",
+  "sensor.firepowerTimerHelp":
+    "How long Peak Performance stays active once enabled",
   "sensor.ripple": "Ripple Control",
   "sensor.rippleHelp":
     "Filters high-frequency jitter at resolutions above 5000 DPI",
@@ -390,10 +399,10 @@ export const en = {
   "fw.wirelessBadge": "Wireless, plug in the USB cable first",
   "fw.mouseFw": "Mouse firmware (current)",
   "fw.mouseFwHelp":
-    "Reported by the device. The 1K RF dongle echoes it, so it may read blank on wireless links",
+    "Mouse firmware version, readable on both wired and 2.4G wireless links",
   "fw.dongleFw": "Receiver firmware (current)",
   "fw.dongleFwHelp":
-    "Not readable from the HID feature interface used by this app",
+    "The receiver's own firmware version, read over the 2.4G link",
   "fw.checkUpdates": "Check for updates",
   "fw.checkManifestHelp":
     "Compares against the configured firmware manifest",
@@ -494,4 +503,8 @@ export const en = {
   "fw.type.210": "Mouse",
   "fw.type.211": "Receiver dongle",
   "fw.type.212": "Common",
+
+  // shared duration formatting (ui-sensor.js timer dropdowns)
+  "time.sec": "{n} s",
+  "time.min": "{n} min",
 };

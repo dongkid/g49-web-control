@@ -6,6 +6,7 @@ import {
   DPI_SWITCH_MODES,
   SCROLL_MODES,
   dpiCodeToDpi,
+  normalizeFirepowerTimer,
 } from "./protocol.js";
 import { t } from "./i18n.js";
 import { icon } from "./icons.js";
@@ -57,6 +58,7 @@ export function createDefaultState() {
     shortcuts: [],
     battery: null,
     version: null,
+    dongleVersion: null,
     cid: null,
     mid: null,
     activeProfileIndex: 0,
@@ -163,6 +165,9 @@ class StateManager {
         Math.min(254, Number(p.sensorSleepTime) || 2),
       ),
       customSleepEnable: p.customSleepEnable !== false,
+      firepower: toBool(p.firepower),
+      firepowerTimer: normalizeFirepowerTimer(p.firepowerTimer),
+      modeSelect: Number(p.modeSelect) === 1 ? 1 : 0,
     };
 
     const binds = (s.keyBindings || []).slice(0, 6).map((b, idx) => ({

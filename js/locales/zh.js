@@ -235,6 +235,14 @@ export const zh = {
   "sensor.motionSync": "动态同步（Motion Sync）",
   "sensor.motionSyncHelp":
     "让传感器帧与 USB 回报同步，保证 1:1 输入线性度",
+  "sensor.modeSelect": "模式选择",
+  "sensor.modeSelectHelp":
+    "传感器功耗模式：LP 偏重续航，HP 偏重追踪性能",
+  "sensor.firepower": "火力全开",
+  "sensor.firepowerHelp":
+    "在所选时长内以峰值性能运行，到期后自动恢复",
+  "sensor.firepowerTimer": "火力全开计时",
+  "sensor.firepowerTimerHelp": "火力全开开启后的持续时长",
   "sensor.ripple": "波纹控制（Ripple Control）",
   "sensor.rippleHelp": "过滤 5000 DPI 以上分辨率的高频抖动",
   "sensor.angleSnap": "角度捕捉（直线修正）",
@@ -357,10 +365,9 @@ export const zh = {
   "fw.readyBadge": "已连 USB 线，可以升级",
   "fw.wirelessBadge": "无线连接中，请先插入 USB 数据线",
   "fw.mouseFw": "鼠标固件（当前）",
-  "fw.mouseFwHelp":
-    "由设备上报。1K 接收器只回显请求，无线连接下可能为空",
+  "fw.mouseFwHelp": "鼠标固件版本，2.4G 无线与有线连接均可读取",
   "fw.dongleFw": "接收器固件（当前）",
-  "fw.dongleFwHelp": "本应用使用的 HID 接口无法读取",
+  "fw.dongleFwHelp": "接收器自身的固件版本，2.4G 无线连接时读取",
   "fw.checkUpdates": "检查更新",
   "fw.checkManifestHelp": "与已配置的固件清单进行比对",
   "fw.checkNoManifestHelp":
@@ -448,4 +455,8 @@ export const zh = {
   "fw.type.210": "鼠标",
   "fw.type.211": "接收器",
   "fw.type.212": "通用",
+
+  // shared duration formatting (ui-sensor.js timer dropdowns)
+  "time.sec": "{n} 秒",
+  "time.min": "{n} 分钟",
 };

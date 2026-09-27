@@ -14,11 +14,13 @@ import {
   SHORTCUT_MAX_KEYS,
   PERF_2BYTE,
   perfRegisterAddress,
+  normalizeFirepowerTimer,
   codeToPollingRate,
   pollingRateToCode,
   encodeDpiRecord,
   decodeDpiRecord,
   getActiveSensorId,
+  getActiveSensor,
   setActiveSensorId,
   peekStoredSensorId,
   sensorIdForMid,
@@ -229,20 +231,16 @@ export class MouseApi {
     return { cid: info ? info.cid : 23, mid: info ? info.mid : 4 };
   }
 
-  static async readVersion() {
+  // Shared parser for the version-shaped queries (0x12 mouse, 0x1d dongle):
+  // binary responses carry the version as a u16/u32 big-endian word
+  // (0x0313 -> "3.13"); anything printable is returned as a plain string.
+  static async queryVersion(cmdId, payload = []) {
     try {
-      const resp = await transport.exchange(
-        UsbCommandID.ReadVersionID,
-        0,
-        [0x01],
-        600,
-      );
+      const resp = await transport.exchange(cmdId, 0, payload, 900);
       if (!resp) return null;
       const len = resp[4] || 8;
       const sub = resp.subarray(5, 5 + len);
 
-      // Binary responses carry the version as a u16/u32 big-endian word
-      // (0x0313 -> "3.13"), matching the official driver's Version encoding.
       if (len >= 2 && len <= 4 && (sub[0] < 32 || sub[0] > 126)) {
         let word = 0;
         for (let i = 0; i < len; i++) word = (word << 8) | sub[i];
@@ -261,6 +259,26 @@ export class MouseApi {
     } catch (_) {
       return null;
     }
+  }
+
+  static async readVersion() {
+    // The firmware answers the version query (0x12) only when the packet
+    // carries no payload: single-byte payloads are echoed back verbatim
+    // (len=1) and carry no version, which is why the old [0x01] query read
+    // null on the 2.4G link. (The official log confirms it sends 0x12 with
+    // an empty payload and receives 03 13.) The legacy [0x01] probe stays
+    // as a fallback so older M916 Pro (3395) firmware that only answered
+    // that form keeps working.
+    return (
+      (await this.queryVersion(UsbCommandID.ReadVersionID)) ||
+      (await this.queryVersion(UsbCommandID.ReadVersionID, [0x01]))
+    );
+  }
+
+  static async readDongleVersion() {
+    // Receiver-side counterpart of ReadVersionID (see UsbCommandID note).
+    // Returns null on links where the query is unsupported (e.g. wired).
+    return this.queryVersion(UsbCommandID.ReadDongleVersionID);
   }
 
   static async readLongRangeMode() {
@@ -865,6 +883,12 @@ export class MouseApi {
 
     const battery = await this.readBattery();
     const version = await this.readVersion();
+    // The receiver version only exists behind a dongle; on a wired link the
+    // query would land on the mouse itself, so skip it there.
+    const devInfo = transport.getDeviceInfo();
+    const dongleVersion = /wired/i.test(devInfo ? devInfo.mode || "" : "")
+      ? null
+      : await this.readDongleVersion();
     const longRangeMode = await this.readLongRangeMode();
     const dongleRgb = await this.get4kDongleRgb();
     const macros = await this.readMacrosFromFlash();
@@ -886,10 +910,16 @@ export class MouseApi {
         powerSaving: perfBool(powerSaving),
         sensorSleepTime,
         customSleepEnable,
+        firepower: perfBool(perfRaw.firepower || 0),
+        firepowerTimer: normalizeFirepowerTimer(
+          perfRaw.firepowerTimer ?? 6,
+        ),
+        modeSelect: perfRaw.modeSelect === 1 ? 1 : 0,
       },
       keyBindings,
       battery,
       version,
+      dongleVersion,
       cid: cidMid.cid,
       mid: cidMid.mid,
       sensorAutoSet,
@@ -936,11 +966,16 @@ export class MouseApi {
       prevRec2("currentDPIIndex", 0),
       FlashAddr.CurrentDPI,
     );
-    await writeIfChanged(
-      rec2(state.silenceHeight || 0),
-      prevRec2("silenceHeight", 0),
-      FlashAddr.SilenceHeight,
-    );
+    // LOD: sensors with caps.lod === false (3311) have no proven register —
+    // the legacy 0x0a address read 0x00 there, which is not a valid LOD
+    // value — so their stored byte is left exactly as found.
+    if (getActiveSensor().capabilities.lod !== false) {
+      await writeIfChanged(
+        rec2(state.silenceHeight || 0),
+        prevRec2("silenceHeight", 0),
+        FlashAddr.SilenceHeight,
+      );
+    }
 
     for (const addr of [FlashAddr.XSpindown, FlashAddr.YSpindown]) {
       const cur = await this.readFlashChunk(addr, 2);
@@ -989,6 +1024,12 @@ export class MouseApi {
         }
         case "customSleepEnable":
           return p.customSleepEnable !== false ? 1 : 0;
+        case "firepower":
+          return p.firepower ? 1 : 0;
+        case "firepowerTimer":
+          return normalizeFirepowerTimer(p.firepowerTimer);
+        case "modeSelect":
+          return p.modeSelect === 1 ? 1 : 0;
         default:
           return 0;
       }

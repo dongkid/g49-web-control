@@ -128,13 +128,19 @@ export class FirmwareUI {
                 </div>
                 <strong class="font-mono">v${state.version || "?.?"}</strong>
               </div>
+              ${
+                isWired
+                  ? ""
+                  : `
               <div class="setting-row">
                 <div class="setting-info">
                   <span class="setting-label">${t("fw.dongleFw")}</span>
                   <span class="setting-help">${t("fw.dongleFwHelp")}</span>
                 </div>
-                <strong class="font-mono">${t("common.na")}</strong>
+                <strong class="font-mono">${state.dongleVersion ? `v${state.dongleVersion}` : t("common.na")}</strong>
               </div>
+              `
+              }
               <div class="setting-row">
                 <div class="setting-info">
                   <span class="setting-label">${t("fw.checkUpdates")}</span>

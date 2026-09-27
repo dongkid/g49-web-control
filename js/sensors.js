@@ -48,6 +48,21 @@ export const SENSORS = {
       // Write-tested on live hardware: 0x56 rejects writes on this firmware
       // (stays 0xFF), so the ECO toggle has no backing register and is hidden.
       powerSaving: false,
+      // Peak-performance block, addresses captured from official-driver
+      // writes: 火力全开 0xb5 (bool), 火力全开计时 0xb7 (10s units), and
+      // 模式选择 0xb9 (0x00 = LP, 0x01 = HP; the official "Corded" entry
+      // 0x10 is wired-mode only and is not offered on the wireless link).
+      firepower: true,
+      modeSelect: true,
+      // LOD is not exposed on this firmware: the official G49 driver shows
+      // the control locked at 1mm (nothing to change), and the legacy 3395
+      // address 0x0a is unbound here — it read 0x01 in the flash dump and
+      // later 0x00, which is not even a valid dropdown value (1mm/2mm),
+      // while the official UI kept showing 1mm. The extended block holds a
+      // writable candidate at 0xab (constant 1 = 1mm, persists writes), but
+      // with the official control locked there is nothing to offer the user;
+      // the LOD row is hidden and the commit path never writes 0x0a here.
+      lod: false,
     },
     // Register addresses captured from the official G49 driver: the 3311
     // firmware keeps some perf toggles in the 0xA0+ region instead of the
@@ -57,6 +72,9 @@ export const SENSORS = {
     perfOverrides: {
       linearCorrection: 0x00af,
       rippleControl: 0x00b1,
+      firepower: 0x00b5,
+      firepowerTimer: 0x00b7,
+      modeSelect: 0x00b9,
     },
     perfSkip: [
       "motionSync",
@@ -65,6 +83,17 @@ export const SENSORS = {
     ],
   },
 };
+
+// LOD (lift-off distance) segment values. The 3395 firmware stores a
+// low/high flag (0/1). Sensors with capabilities.lod === false (currently
+// the 3311 — its LOD is locked to 1mm by the official firmware/driver)
+// must not show this control.
+export function lodChoices() {
+  return [
+    { value: 0, key: "dpi.lodLow" },
+    { value: 1, key: "dpi.lodHigh" },
+  ];
+}
 
 // dpi -> register code, extracted verbatim from driver_sensor.h (SENSOR_3311_DPI_*)
 export const PAW3311_DPI_CODE = new Map([

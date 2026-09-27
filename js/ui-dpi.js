@@ -5,7 +5,7 @@ import {
   encodeDpiRecord,
   decodeDpiRecord,
 } from "./protocol.js";
-import { sensorMaxDpi, getActiveSensor } from "./sensors.js";
+import { sensorMaxDpi, getActiveSensor, lodChoices } from "./sensors.js";
 import { t } from "./i18n.js";
 import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
@@ -95,16 +95,24 @@ export class DpiUI {
               </div>
               <input type="range" id="debounceRange" min="0" max="20" value="${state.perf.keyDebounce || 4}">
 
+              ${getActiveSensor().capabilities.lod !== false
+                ? `
               <div class="setting-row mt-md">
                 <div class="setting-info">
                   <span class="setting-label">${t("dpi.lod")}</span>
                   <span class="setting-help">${t("dpi.lodHelp")}</span>
                 </div>
                 <div class="segment-group">
-                  <button class="segment-btn ${state.silenceHeight === 0 ? "active" : ""}" id="lodLowBtn">${t("dpi.lodLow")}</button>
-                  <button class="segment-btn ${state.silenceHeight === 1 ? "active" : ""}" id="lodHighBtn">${t("dpi.lodHigh")}</button>
+                  ${lodChoices()
+                    .map(
+                      (c) =>
+                        `<button class="segment-btn ${state.silenceHeight === c.value ? "active" : ""}" data-lod="${c.value}">${t(c.key)}</button>`,
+                    )
+                    .join("")}
                 </div>
               </div>
+              `
+                : ""}
             </div>
           </div>
         </div>
@@ -188,18 +196,15 @@ export class DpiUI {
       });
     }
 
-    const lodLow = this.container.querySelector("#lodLowBtn");
-    const lodHigh = this.container.querySelector("#lodHighBtn");
-    if (lodLow) {
-      lodLow.addEventListener("click", () => {
-        stateManager.updateState({ silenceHeight: 0 });
+    this.container
+      .querySelectorAll("[data-lod]")
+      .forEach((btn) => {
+        btn.addEventListener("click", () => {
+          stateManager.updateState({
+            silenceHeight: Number(btn.dataset.lod),
+          });
+        });
       });
-    }
-    if (lodHigh) {
-      lodHigh.addEventListener("click", () => {
-        stateManager.updateState({ silenceHeight: 1 });
-      });
-    }
 
     const addStageBtn = this.container.querySelector("#addDpiStageBtn");
     const removeStageBtn = this.container.querySelector("#removeDpiStageBtn");

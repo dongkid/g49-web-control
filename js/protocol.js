@@ -97,6 +97,11 @@ export const UsbCommandID = {
   ReadCIDMID: 0x10,
   EnterMTKMode: 0x11,
   ReadVersionID: 0x12,
+  // Answers with the same u16 version shape as ReadVersionID (e.g. 03 00
+  // vs 03 13). Believed to be the dongle's own firmware version,
+  // complementing 0x12 = the mouse ("slave") version — the official
+  // Settings page shows separate receiver/mouse firmware entries.
+  ReadDongleVersionID: 0x1d,
   Set4KDongleRGB: 0x14,
   Get4KDongleRGBValue: 0x15,
   SetLongRangeMode: 0x16,
@@ -143,12 +148,43 @@ export const PERF_2BYTE = {
   powerSaving: 0x0056,
   sensorSleepTime: 0x0058,
   customSleepEnable: 0x005a,
+  // Peak-performance block (火力全开): addresses are only known for the
+  // 3311 firmware (captured from the official G49 driver), so the 3395
+  // base map leaves them null and the read/commit paths skip null
+  // addresses. The PAW3311 sensor profile overrides these.
+  firepower: null, // 0x00b5 on 3311
+  firepowerTimer: null, // 0x00b7 on 3311 (10-second units)
+  modeSelect: null, // 0x00b9 on 3311 (0x00 = LP, 0x01 = HP)
 };
+
+// 火力全开 timer options, verbatim from the official driver's language
+// file (customComboBox_FullPerformance). Register values are 10-second
+// units: 0x03 = 30 s, 0x06 = 1 min, ... 0xf0 = 40 min.
+export const FIREPOWER_TIMER_OPTIONS = [
+  { value: 3, seconds: 30 },
+  { value: 6, seconds: 60 },
+  { value: 30, seconds: 300 },
+  { value: 60, seconds: 600 },
+  { value: 90, seconds: 900 },
+  { value: 120, seconds: 1200 },
+  { value: 150, seconds: 1500 },
+  { value: 180, seconds: 1800 },
+  { value: 210, seconds: 2100 },
+  { value: 240, seconds: 2400 },
+];
+
+// Keep unknown/unprogrammed timer bytes out of the write path: they fall
+// back to the official default (1 minute) only when the user actually
+// commits a change, never on a plain reconnect.
+export function normalizeFirepowerTimer(raw) {
+  const v = Number(raw);
+  return FIREPOWER_TIMER_OPTIONS.some((o) => o.value === v) ? v : 6;
+}
 
 // Perf register resolution per active sensor: per-sensor overrides first
 // (addresses captured from the official driver), then registers whose
 // semantics are unverified on that sensor (skipped entirely), then the
-// canonical 3395 layout.
+// canonical 3395 layout. Unknown keys resolve to null (never touched).
 export function perfRegisterAddress(key) {
   const sensor = getActiveSensor();
   if (sensor) {
@@ -159,7 +195,8 @@ export function perfRegisterAddress(key) {
       return null;
     }
   }
-  return PERF_2BYTE[key];
+  const base = PERF_2BYTE[key];
+  return base === undefined ? null : base;
 }
 
 export const POLLING_RATES = [

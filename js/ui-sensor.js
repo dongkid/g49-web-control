@@ -2,6 +2,7 @@ import { stateManager } from "./state.js";
 import { MouseApi } from "./mouse-api.js";
 import { transport } from "./transport.js";
 import { SENSORS, getActiveSensor, getActiveSensorId, setActiveSensorId } from "./sensors.js";
+import { FIREPOWER_TIMER_OPTIONS } from "./protocol.js";
 import { t } from "./i18n.js";
 import { icon } from "./icons.js";
 
@@ -65,6 +66,53 @@ export class SensorUI {
       `
       : "";
 
+    const modeSelectRow = caps.modeSelect
+      ? `
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">${t("sensor.modeSelect")}</span>
+                  <span class="setting-help">${t("sensor.modeSelectHelp")}</span>
+                </div>
+                <select id="modeSelectSelect" style="width: 7rem;">
+                  <option value="0" ${Number(p.modeSelect) === 0 ? "selected" : ""}>LP</option>
+                  <option value="1" ${Number(p.modeSelect) === 1 ? "selected" : ""}>HP</option>
+                </select>
+              </div>
+      `
+      : "";
+
+    const timerLabel = (seconds) =>
+      seconds < 60
+        ? t("time.sec", { n: seconds })
+        : t("time.min", { n: seconds / 60 });
+    const timerOptions = FIREPOWER_TIMER_OPTIONS.map(
+      (o) =>
+        `<option value="${o.value}" ${p.firepowerTimer === o.value ? "selected" : ""}>${timerLabel(o.seconds)}</option>`,
+    ).join("");
+
+    const firepowerRow = caps.firepower
+      ? `
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">${t("sensor.firepower")}</span>
+                  <span class="setting-help">${t("sensor.firepowerHelp")}</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="firepowerSwitch" ${p.firepower ? "checked" : ""}>
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">${t("sensor.firepowerTimer")}</span>
+                  <span class="setting-help">${t("sensor.firepowerTimerHelp")}</span>
+                </div>
+                <select id="firepowerTimerSelect" style="width: 7rem;">${timerOptions}</select>
+              </div>
+      `
+      : "";
+
     this.container.innerHTML = `
       <div class="grid-2col">
         <div class="col-stack">
@@ -87,6 +135,8 @@ export class SensorUI {
                 <select id="sensorSelect">${sensorOptions}</select>
               </div>
               ${motionSyncRow}
+              ${modeSelectRow}
+              ${firepowerRow}
 
               <div class="setting-row">
                 <div class="setting-info">
@@ -257,6 +307,35 @@ export class SensorUI {
       linearCorrection.addEventListener("change", () => {
         stateManager.updateState((draft) => {
           draft.perf.linearCorrection = linearCorrection.checked;
+        });
+      });
+    }
+
+    const modeSelect = this.container.querySelector("#modeSelectSelect");
+    if (modeSelect) {
+      modeSelect.addEventListener("change", () => {
+        stateManager.updateState((draft) => {
+          draft.perf.modeSelect = Number(modeSelect.value) === 1 ? 1 : 0;
+        });
+      });
+    }
+
+    const firepower = this.container.querySelector("#firepowerSwitch");
+    if (firepower) {
+      firepower.addEventListener("change", () => {
+        stateManager.updateState((draft) => {
+          draft.perf.firepower = firepower.checked;
+        });
+      });
+    }
+
+    const firepowerTimer = this.container.querySelector(
+      "#firepowerTimerSelect",
+    );
+    if (firepowerTimer) {
+      firepowerTimer.addEventListener("change", () => {
+        stateManager.updateState((draft) => {
+          draft.perf.firepowerTimer = Number(firepowerTimer.value);
         });
       });
     }
