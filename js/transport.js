@@ -119,23 +119,38 @@ class Transport {
 
     let dev = null;
     const candidates = await this.getPairedCandidates();
-    if (candidates.length === 1) {
-      dev = candidates[0];
-    } else if (candidates.length > 1) {
-      // Several supported devices share these USB IDs (G49 / M916 Pro 1K);
-      // never guess between them — make the user pick one explicitly.
+    if (interactive) {
+      // Explicit user intent (connect / switch buttons): always open
+      // Chrome's chooser so a newly attached device can be picked.
       const selected = await navigator.hid.requestDevice({ filters });
       if (!selected || selected.length === 0) return false;
       dev = selected[0];
-    } else if (interactive) {
-      const selected = await navigator.hid.requestDevice({ filters });
-      if (selected && selected.length > 0) {
-        dev = selected[0];
-      }
+    } else {
+      // Silent auto-connect: never interrupt a page load with the chooser.
+      // Prefer the device last used in this browser, then any granted one.
+      const rememberedPid = this.rememberedPid();
+      dev =
+        candidates.find((d) => d.productId === rememberedPid) ||
+        candidates[0] ||
+        null;
+      if (!dev) return false;
     }
 
-    if (!dev) return false;
+    return this.openDevice(dev);
+  }
 
+  rememberedPid() {
+    try {
+      const v = parseInt(localStorage.getItem("m916_last_pid"), 10);
+      return Number.isFinite(v) ? v : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Open a specific granted device and make it the active link. Shared by
+  // connect() and the device-switching flow in app.js.
+  async openDevice(dev) {
     if (!this.isVendorInterface(dev)) {
       throw new Error(
         "Selected device is not the M916 Pro vendor interface (usage page 0xFF04)",
@@ -145,6 +160,10 @@ class Transport {
     if (!dev.opened) {
       await dev.open();
     }
+
+    try {
+      localStorage.setItem("m916_last_pid", String(dev.productId));
+    } catch (_) {}
 
     this.device = dev;
     this.activeModel = this.getDeviceInfo();

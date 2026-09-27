@@ -10,6 +10,7 @@ export const zh = {
   "header.connected": "已连接",
   "header.readingDevice": "正在读取设备...",
   "header.connect": "连接",
+  "header.switchDevice": "切换设备",
   "header.toggleTheme": "切换深色模式",
   "header.language": "语言",
 
@@ -31,12 +32,14 @@ export const zh = {
   "toolbar.export": "导出",
   "toolbar.import": "导入",
   "toolbar.reset": "恢复出厂",
+  "toolbar.autosave": "自动保存",
 
   "overlay.title": "设备未连接",
   "overlay.msg":
     "通过 2.4G 接收器或 USB-C 数据线连接红龙 G49 / M916 Pro，然后点击“连接”。",
   "overlay.retry": "连接设备",
   "overlay.connectingTitle": "正在连接设备...",
+  "overlay.switchingTitle": "正在切换设备...",
   "overlay.connectingMsg": "正在建立 WebHID 连接并唤醒接收器链路...",
   "overlay.pickMsg":
     "在浏览器弹窗中选择你的红龙 G49 / M916 Pro，然后等待配置载入。",
@@ -56,8 +59,16 @@ export const zh = {
   "toast.readFail": "从鼠标读取失败：{err}",
   "toast.readFailPartial": "已连接，但读取闪存失败：{err}",
   "toast.unsupportedDevice":
-    "所选设备不是受支持的红龙鼠标（设备身份校验未通过），已断开连接。",
+    "该设备不是受支持的红龙鼠标（设备身份校验未通过），已断开连接。若你已改用有线连接或其他接收器，请点击下方“连接设备”重新选择。",
   "toast.connectFail": "连接失败：{err}",
+  "toast.switchDiscardConfirm":
+    "有未保存的更改，切换设备将丢失这些更改。确定要切换吗？",
+  "toast.switchCancelledRestored":
+    "未选择新设备，已恢复与原设备的连接。",
+  "toast.newDevicePending":
+    "检测到有线连接，但有未保存的更改。保存或放弃后，点击顶部设备信息即可切换。",
+  "toast.autosaveOn": "自动保存已开启：改动停止约 2 秒后自动写入设备。",
+  "toast.autosaveOff": "自动保存已关闭，请用“写入”按钮手动保存。",
   "toast.writing": "正在将设置写入鼠标闪存...",
   "toast.writeOk": "设置已保存到鼠标硬件！",
   "toast.writeFail": "保存设置失败：{err}",

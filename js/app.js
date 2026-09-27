@@ -11,6 +11,7 @@ import { ShortcutsUI } from "./ui-shortcuts.js";
 import { FirmwareUI } from "./ui-firmware.js";
 import {
   codeToPollingRate,
+  DEVICE_MODELS,
   getActiveSensor,
   getActiveSensorId,
   SENSOR_IDS,
@@ -51,6 +52,7 @@ class App {
     this.statusDot = document.getElementById("statusDot");
     this.statusText = document.getElementById("statusText");
     this.deviceBadge = document.getElementById("deviceBadge");
+    this.deviceBadgeText = document.getElementById("deviceBadgeText");
     this.batteryBadge = document.getElementById("batteryBadge");
     this.batteryPercent = document.getElementById("batteryPercent");
     this.batteryVoltage = document.getElementById("batteryVoltage");
@@ -67,6 +69,7 @@ class App {
     this.notifyContainer = document.getElementById("notifyContainer");
 
     this.connectHeaderBtn = document.getElementById("connectHeaderBtn");
+    this.autosaveBtn = document.getElementById("autosaveBtn");
     this.retryBtn = document.getElementById("retryBtn");
     this.readBtn = document.getElementById("readBtn");
     this.commitBtn = document.getElementById("commitBtn");
@@ -178,6 +181,7 @@ class App {
 
     stateManager.subscribe((state, hasChanges) => {
       this.syncStateToUI(state, hasChanges);
+      this.scheduleAutoSave();
     });
   }
 
@@ -186,6 +190,29 @@ class App {
       this.connectHeaderBtn.addEventListener("click", () =>
         this.connectDevice(true),
       );
+    }
+    // The device badge doubles as the switch control: clicking it opens
+    // Chrome's chooser to hop to another receiver / the wired link.
+    if (this.deviceBadge) {
+      this.deviceBadge.addEventListener("click", () => {
+        if (transport.isConnected()) this.switchDevice();
+      });
+      this.deviceBadge.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (transport.isConnected()) this.switchDevice();
+        }
+      });
+    }
+    if (this.autosaveBtn) {
+      this.autosaveBtn.addEventListener("click", () => this.toggleAutoSave());
+      this.autoSaveEnabled = false;
+      try {
+        this.autoSaveEnabled = localStorage.getItem("m916_autosave") === "1";
+      } catch (_) {}
+      this.autoSaveTimer = null;
+      this.autoSaveBaseline = null;
+      this.applyAutoSaveButton();
     }
     if (this.retryBtn) {
       this.retryBtn.addEventListener("click", () => this.connectDevice(true));
@@ -258,15 +285,31 @@ class App {
       }
     });
 
-    transport.onConnect(() => {
-      if (window.firmwareUpdateBusy) return;
+    transport.onConnect((device) => {
+      if (window.firmwareUpdateBusy || this.isWorking) return;
+      if (transport.device === device) return;
+      // Only granted vendor interfaces expose collections; ungranted
+      // newcomers must go through the chooser (connect buttons) instead.
+      if (!transport.isVendorInterface(device)) return;
       const info = transport.getDeviceInfo();
-      if (!info || info.mode !== "Wired USB-C") {
+      if (!info) {
+        // Nothing connected: silently reconnect the remembered device.
         this.connectDevice(false);
+        return;
       }
+      if (/wired/i.test(info.mode)) return;
+      // Attaching another dongle while on 2.4G is a no-op; but plugging the
+      // USB-C cable means the mouse just moved links — follow it.
+      const newcomerMode = DEVICE_MODELS[device.productId]?.mode || "";
+      if (!/wired/i.test(newcomerMode)) return;
+      if (stateManager.hasChanges) {
+        this.notify(t("toast.newDevicePending"), "info");
+        return;
+      }
+      this.switchToDevice(device);
     });
     transport.onDisconnect(() => {
-      if (window.firmwareUpdateBusy) return;
+      if (window.firmwareUpdateBusy || this.switchingDevice) return;
       this.onDisconnected();
     });
     transport.onStatusChange((event) => this.handleUnsolicitedStatus(event));
@@ -299,6 +342,8 @@ class App {
     stateManager.current.activeProfileIndex = profileIndex;
     stateManager.initialCommitted.activeProfileIndex = profileIndex;
     stateManager.notify();
+    // Loading a stored profile must not trip auto-save on its own.
+    this.markAutoSaveBaseline();
 
     if (transport.isConnected()) {
       try {
@@ -380,6 +425,169 @@ class App {
       this.isWorking = false;
       this.syncButtonStates();
     }
+  }
+
+  // Open Chrome's device chooser while connected so the user can hop to
+  // another receiver / the wired link. Unsaved changes are confirmed away,
+  // and cancelling the chooser restores the previous session instead of
+  // dropping the user into the disconnected overlay.
+  async switchDevice() {
+    if (this.isWorking) return;
+    if (
+      stateManager.hasChanges &&
+      !confirm(t("toast.switchDiscardConfirm"))
+    ) {
+      return;
+    }
+    const previous = await transport.getPairedCandidates();
+    // The deliberate disconnect below would otherwise trip the transport's
+    // disconnect handler and flash the "device not connected" overlay.
+    this.switchingDevice = true;
+    try {
+      this.isWorking = true;
+      this.statusDot.className = "status-dot warning";
+      this.statusText.textContent = t("header.connecting");
+      this.showOverlay(
+        t("overlay.switchingTitle"),
+        t("overlay.pickMsg"),
+        { busy: true },
+      );
+      this.stopBatteryPoll();
+      try {
+        await transport.disconnect();
+      } catch (_) {}
+      const ok = await transport.connect(true);
+      if (ok) {
+        await this.handleConnectSuccess();
+        return;
+      }
+      const restored = await this.reconnectPrevious(previous);
+      if (restored) {
+        await this.handleConnectSuccess();
+        this.notify(t("toast.switchCancelledRestored"), "info");
+      } else {
+        this.onDisconnected();
+      }
+    } catch (err) {
+      this.onDisconnected();
+      this.showOverlay(
+        t("overlay.errorTitle"),
+        t("toast.connectFail", { err: err.message }),
+        { error: true },
+      );
+    } finally {
+      this.switchingDevice = false;
+      this.isWorking = false;
+      this.syncButtonStates();
+    }
+  }
+
+  // Silently hop to a specific (already granted) device — used when the
+  // USB-C cable is plugged in while the app is on the 2.4G link.
+  async switchToDevice(device) {
+    if (this.isWorking) return;
+    this.switchingDevice = true;
+    try {
+      this.isWorking = true;
+      this.statusDot.className = "status-dot warning";
+      this.statusText.textContent = t("header.connecting");
+      this.showOverlay(
+        t("overlay.switchingTitle"),
+        t("overlay.connectingMsg"),
+        { busy: true },
+      );
+      this.stopBatteryPoll();
+      try {
+        await transport.disconnect();
+      } catch (_) {}
+      const ok = await transport.openDevice(device);
+      if (ok) {
+        await this.handleConnectSuccess();
+      } else {
+        this.onDisconnected();
+      }
+    } catch (err) {
+      this.onDisconnected();
+      this.showOverlay(
+        t("overlay.errorTitle"),
+        t("toast.connectFail", { err: err.message }),
+        { error: true },
+      );
+    } finally {
+      this.switchingDevice = false;
+      this.isWorking = false;
+      this.syncButtonStates();
+    }
+  }
+
+  async reconnectPrevious(candidates) {
+    for (const dev of candidates || []) {
+      try {
+        return await transport.openDevice(dev);
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  applyAutoSaveButton() {
+    if (!this.autosaveBtn) return;
+    this.autosaveBtn.classList.toggle("active", !!this.autoSaveEnabled);
+    this.autosaveBtn.setAttribute("aria-pressed", String(!!this.autoSaveEnabled));
+  }
+
+  // Auto-save: commit pending changes to the device shortly after the last
+  // edit. Changes that only come from programmatic loads (profile switch,
+  // import, device read) never trigger it — a baseline snapshot is taken
+  // after those, and only a state that differs from it starts the timer.
+  markAutoSaveBaseline() {
+    try {
+      this.autoSaveBaseline = JSON.stringify(
+        stateManager.sanitizeForCompare(stateManager.current),
+      );
+    } catch (_) {
+      this.autoSaveBaseline = null;
+    }
+  }
+
+  scheduleAutoSave() {
+    if (!this.autosaveBtn) return;
+    clearTimeout(this.autoSaveTimer);
+    if (!this.autoSaveEnabled || !stateManager.hasChanges) return;
+    const current = JSON.stringify(
+      stateManager.sanitizeForCompare(stateManager.current),
+    );
+    if (this.autoSaveBaseline !== null && current === this.autoSaveBaseline) {
+      return;
+    }
+    this.autoSaveTimer = setTimeout(async () => {
+      if (!this.autoSaveEnabled) return;
+      if (this.isWorking) {
+        this.scheduleAutoSave();
+        return;
+      }
+      if (!transport.isConnected() || !stateManager.hasChanges) return;
+      const pending = JSON.stringify(
+        stateManager.sanitizeForCompare(stateManager.current),
+      );
+      if (this.autoSaveBaseline !== null && pending === this.autoSaveBaseline) {
+        return;
+      }
+      await this.handleCommit();
+    }, 1800);
+  }
+
+  toggleAutoSave() {
+    this.autoSaveEnabled = !this.autoSaveEnabled;
+    try {
+      localStorage.setItem("m916_autosave", this.autoSaveEnabled ? "1" : "0");
+    } catch (_) {}
+    this.applyAutoSaveButton();
+    clearTimeout(this.autoSaveTimer);
+    this.notify(
+      t(this.autoSaveEnabled ? "toast.autosaveOn" : "toast.autosaveOff"),
+      "info",
+    );
+    if (this.autoSaveEnabled) this.scheduleAutoSave();
   }
 
   // Post-read identity: the sensor profile (auto-detected or manual) plus
@@ -502,7 +710,7 @@ class App {
     this.stopBatteryPoll();
     this.statusDot.className = "status-dot error";
     this.statusText.textContent = t("header.disconnect");
-    this.deviceBadge.textContent = "-";
+    this.deviceBadgeText.textContent = "-";
     this.deviceBadge.style.display = "none";
     this.versionBadge.style.display = "none";
     this.batteryBadge.style.display = "none";
@@ -535,7 +743,7 @@ class App {
     const devInfo = transport.getDeviceInfo();
     if (devInfo) {
       this.deviceBadge.style.display = "inline-flex";
-      this.deviceBadge.textContent = `${this.resolvedModelName()} · ${getActiveSensor().label} (${devInfo.mode})`;
+      this.deviceBadgeText.textContent = `${this.resolvedModelName()} · ${getActiveSensor().label} (${devInfo.mode})`;
     }
 
     if (state.version) {
@@ -612,6 +820,7 @@ class App {
         prevShortcuts: ini.shortcuts || [],
       });
       stateManager.setCommittedState(stateManager.current);
+      this.markAutoSaveBaseline();
       this.mouseSvg.render();
       this.buttonsUI.renderList();
       this.notify(t("toast.writeOk"), "success");
@@ -675,6 +884,9 @@ class App {
         stateManager.importProfileJSON(event.target.result);
         this.mouseSvg.render();
         this.buttonsUI.renderList();
+        // An import loads values into the UI only; auto-save must wait for
+        // a real user edit before committing anything.
+        this.markAutoSaveBaseline();
         this.notify(
           t("toast.importOk"),
           "success",

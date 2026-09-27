@@ -61,6 +61,26 @@ header {
   white-space: nowrap;
 }
 
+/* Device badge doubles as the switch-device control while connected */
+.device-badge-switch {
+  cursor: pointer;
+  user-select: none;
+}
+
+.device-badge-switch:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.device-badge-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.device-badge-switch svg {
+  opacity: 0.6;
+}
+
 .battery-badge {
   display: inline-flex;
   align-items: center;

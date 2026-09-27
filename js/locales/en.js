@@ -11,6 +11,7 @@ export const en = {
   "header.connected": "Connected",
   "header.readingDevice": "Reading device...",
   "header.connect": "Connect",
+  "header.switchDevice": "Switch device",
   "header.toggleTheme": "Toggle dark mode",
   "header.language": "Language",
 
@@ -32,12 +33,14 @@ export const en = {
   "toolbar.export": "Export",
   "toolbar.import": "Import",
   "toolbar.reset": "Reset",
+  "toolbar.autosave": "Auto-save",
 
   "overlay.title": "Device Disconnected",
   "overlay.msg":
     "Connect your Redragon G49 / M916 Pro via 2.4GHz USB dongle or USB-C cable and click Connect.",
   "overlay.retry": "Connect Device",
   "overlay.connectingTitle": "Connecting to device...",
+  "overlay.switchingTitle": "Switching device...",
   "overlay.connectingMsg":
     "Opening the WebHID connection and waking up the receiver link...",
   "overlay.pickMsg":
@@ -60,8 +63,17 @@ export const en = {
   "toast.readFailPartial":
     "Connected, but reading flash failed: {err}",
   "toast.unsupportedDevice":
-    "The selected device is not a supported Redragon mouse (identity check failed). Disconnected.",
+    "That device is not a supported Redragon mouse (identity check failed). Disconnected. If you switched to a wired connection or another receiver, click \"Connect device\" below to pick it.",
   "toast.connectFail": "Connection failed: {err}",
+  "toast.switchDiscardConfirm":
+    "You have unsaved changes. Switching devices will discard them. Continue?",
+  "toast.switchCancelledRestored":
+    "No new device selected; the previous connection was restored.",
+  "toast.newDevicePending":
+    "Wired connection detected, but you have unsaved changes. Save or discard them, then click the device info badge to switch.",
+  "toast.autosaveOn":
+    "Auto-save enabled: changes are written to the device about 2s after you stop editing.",
+  "toast.autosaveOff": "Auto-save disabled — use the Commit button to save manually.",
   "toast.writing": "Writing settings to mouse flash memory...",
   "toast.writeOk": "Settings saved to mouse hardware!",
   "toast.writeFail": "Failed to save settings: {err}",

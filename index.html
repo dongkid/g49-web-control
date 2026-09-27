@@ -62,9 +62,30 @@
           <span id="statusText">Disconnected</span>
         </span>
 
-        <span class="device-badge" id="deviceBadge" style="display: none"
-          >-</span
+        <span
+          class="device-badge device-badge-switch"
+          id="deviceBadge"
+          role="button"
+          tabindex="0"
+          data-i18n-title="header.switchDevice"
+          style="display: none"
         >
+          <span id="deviceBadgeText">-</span>
+          <svg
+            class="lucide lucide-chevron-down"
+            xmlns="http://www.w3.org/2000/svg"
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </span>
 
         <span class="battery-badge" id="batteryBadge" style="display: none">
           <svg
@@ -245,6 +266,23 @@
         </div>
 
         <div class="toolbar-right">
+          <button id="autosaveBtn" class="btn sm" aria-pressed="false">
+            <svg
+              class="lucide lucide-zap"
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            <span data-i18n="toolbar.autosave">Auto-save</span>
+          </button>
           <button id="readBtn" class="btn sm" disabled>
             <svg
               class="lucide lucide-rotate-ccw"

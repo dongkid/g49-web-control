@@ -31,6 +31,14 @@
   border-radius: var(--radius-sm);
 }
 
+/* Toggleable toolbar buttons (e.g. auto-save) */
+.btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
 .btn.lg {
   height: var(--control-height-lg);
   padding: 0 var(--space-2xl);
