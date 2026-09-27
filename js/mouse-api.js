@@ -282,26 +282,40 @@ export class MouseApi {
   }
 
   static async readLongRangeMode() {
+    // The firmware answers the long-range query only with an empty payload:
+    // a 10-byte report whose first byte is the mode flag (official driver
+    // log: GetLongRangeMode -> ten zero bytes when off). Requests carrying
+    // any single-byte payload are echoed back verbatim and carry no state,
+    // which is why the old [0x00] query always read "off".
     try {
       const resp = await transport.exchange(
         UsbCommandID.GetLongRangeMode,
         0,
-        [0x00],
-        500,
+        [],
+        600,
       );
-      if (!resp || resp.length < 6) return false;
-      const modeByte = resp[4] >= 2 ? resp[6] : resp[5];
-      return modeByte === 0x01;
+      if (!resp || resp[4] < 1) return false;
+      return resp[5] === 0x01;
     } catch (_) {
       return false;
     }
   }
 
   static async setLongRangeMode(enabled) {
-    await transport.sendPacket(UsbCommandID.SetLongRangeMode, 0, [
-      enabled ? 0x01 : 0x00,
-    ]);
-    await transport.sleep(50);
+    // The write takes the same 10-byte shape as the read report (official
+    // log: SetLongRangeMode -> 01 00 00 00 00 00 00 00 00 00). A bare
+    // [0x01] payload is silently ignored by the firmware, so the result is
+    // verified by reading the flag back and retried before giving up.
+    const payload = new Array(10).fill(0);
+    payload[0] = enabled ? 0x01 : 0x00;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await transport.sendPacket(UsbCommandID.SetLongRangeMode, 0, payload);
+      await transport.sleep(80);
+      if ((await this.readLongRangeMode()) === !!enabled) return;
+    }
+    throw new Error(
+      "Long-range mode write was not applied by the device (readback mismatch)",
+    );
   }
 
   static async get4kDongleRgb() {

@@ -41,6 +41,13 @@ export class SensorUI {
     const p = state.perf || {};
     const sensor = getActiveSensor();
     const caps = sensor.capabilities;
+    // The official driver only allows long-range mode on wireless links
+    // ("无线模式下才能设置远距离模式"), so the whole RF card is hidden
+    // on wired connections.
+    const devMode = transport.getDeviceInfo()
+      ? transport.getDeviceInfo().mode || ""
+      : "";
+    const isWirelessLink = !/wired/i.test(devMode);
 
     const sensorOptions = Object.values(SENSORS)
       .map(
@@ -186,6 +193,8 @@ export class SensorUI {
         </div>
 
         <div class="col-stack">
+          ${isWirelessLink
+            ? `
           <div class="card">
             <div class="card-header">
               <div class="card-title-group">
@@ -209,6 +218,8 @@ export class SensorUI {
               </div>
             </div>
           </div>
+          `
+            : ""}
 
           <div class="card">
             <div class="card-header">
