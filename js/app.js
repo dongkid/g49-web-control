@@ -259,6 +259,11 @@ class App {
           this.lastOverlay.opts,
         );
       }
+      if (this.statusText) {
+        this.statusText.textContent = transport.isConnected()
+          ? t("header.connected")
+          : t("header.disconnect");
+      }
       stateManager.notify();
       this.syncStateToUI(stateManager.current, stateManager.hasChanges);
     });

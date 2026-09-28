@@ -5,8 +5,8 @@ WebHID control center for the **Redragon G49 base** and the **Redragon M916 Pro*
 **English** | [中文](README.zh-CN.md)
 
 <p align="center">
-  <img src="screenshots/screenshot1.png" width="49%">
-  <img src="screenshots/screenshot2.png" width="49%">
+  <img src="screenshots/en-1.png" width="49%">
+  <img src="screenshots/en-2.png" width="49%">
 </p>
 
 ## Supported models
@@ -25,12 +25,13 @@ Both G49 and M916 Pro 1K share the same 1K USB IDs but use different sensors and
 - **DPI & polling:** 1-8 DPI stages, per-stage colors, live stage switching, polling rate from 125 Hz to 4 kHz
   - PAW3395 (M916 Pro): linear register codes, 50-26,000 DPI
   - PAW3311 (G49): quantized register table 50-10,000 DPI with x2/x4 scaling up to 24,000 DPI, matching the official G49 driver's `driver_sensor.h`
-- **Sensor tuning:** Ripple control and angle snapping on both sensors; motion sync and MTK surface calibration on PAW3395 models only (hidden on the G49, where the registers are firmware placeholders)
+- **Sensor tuning:** Ripple control and angle snapping on both sensors; motion sync and MTK surface calibration on PAW3395 models only (hidden on the G49, where the registers are firmware placeholders); peak-performance block on the G49 (toggle, 30 s – 40 min timer, LP/HP sensor mode)
 - **Power & RF:** Long-range mode, power saving, sleep timers
+- **Connection UX:** Click the device-info badge in the header to switch between receivers / the wired link (reload always reconnects the last-used device silently); mouse + receiver firmware versions are read live on the 2.4G link; optional auto-save commits changes ~2 s after you stop editing
 - **Macros & shortcuts:** Key-combo and multi-step macro recording stored on on-board flash
 - **Profiles:** 4 on-device profiles, `.json` export/import, factory reset
 - **Firmware:** USB DFU updates for mouse and receiver with header validation and a dry-run trace; accepts G49 (MID 4) packages
-- **Zero install:** Static HTML/JS/CSS, no build step
+- **Zero install:** Static HTML/JS/CSS, no build step; English / 中文 UI
 
 ## G49-specific notes
 
@@ -38,8 +39,10 @@ This is a fork of [vzpyr/m916proui](https://github.com/vzpyr/m916proui) adapted 
 
 - Sensor-aware DPI codec built from the official G49 driver's `SENSOR_3311_DPI_*` table (verified byte-for-byte against a live flash dump)
 - Perf booleans on the 3311 firmware are read strictly (`1` = on); factory values like `0x80`/`0xFF` are preserved instead of being rewritten as 0/1, and the unsupported motion-sync register is never touched on commit
+- Perf toggles live in the 0xA0+ region on this firmware (angle snapping `0xaf`, ripple `0xb1`, peak performance `0xb5`/`0xb7`, sensor mode `0xb9`) — addresses captured from official-driver writes
+- Version queries need an empty payload (`0x12` mouse, `0x1d` receiver, u16 answers); single-byte payloads are echoed back verbatim. The legacy `[0x01]` probe stays as a fallback for older M916 Pro firmware
+- Long-range mode reads a 10-byte report via `0x17` and writes the same 10-byte shape via `0x16` — a bare `[0x01]` write is silently ignored
 - Pairing and firmware matching prefer the live-read board identity (MID 4 for the G49)
-- Known quirk: on the 1K RF dongle the version / CID-MID queries only ACK-echo, so the firmware badge may stay blank over wireless (matches upstream findings)
 
 ## Web
 
@@ -75,8 +78,8 @@ sudo udevadm control --reload-rules
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) (© vzpyr, © dongkid).
 
 ## Credits
 
-Fork of [vzpyr/m916proui](https://github.com/vzpyr/m916proui) (MIT). G49 adaptation based on the official G49 driver's `driver_sensor.h`, `Config.ini` and live flash captures; protocol reverse engineering credits go to the upstream author. 
+Based on [vzpyr/m916proui](https://github.com/vzpyr/m916proui) (MIT): the original M916 Pro UI and the CX52850P protocol groundwork are the upstream author's work. The G49/PAW3311 adaptation — DPI codec, perf-register layout, peak-performance block, long-range mode and the receiver version query — was reverse-engineered by [dongkid](https://github.com/dongkid) from the official G49 driver's `driver_sensor.h` and `Config.ini`, its session logs, and byte-level live hardware testing.
